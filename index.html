@@ -5,7 +5,9 @@
     <meta charset="UTF-8">
     <meta name="viewport"
         content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>EV Gravity Logger (Ultimate Edition)</title>
+    <title>EV Gravity Logger</title>
+    <link rel="apple-touch-icon" href="icon.png">
+    <link rel="icon" href="icon.png">
 
     <!-- Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -390,17 +392,17 @@
         const OdometerDigit = ({ value, onUp, onDown }) => {
             return (
                 <div className="flex flex-col items-center gap-1">
-                    <button onClick={onUp} className="cyber-btn p-1 text-cyber-primary hover:text-white transition-colors">
+                    <RepeaterButton onClick={onUp} className="cyber-btn p-1 text-cyber-primary hover:text-white transition-colors">
                         <Icon name="chevron-up" size={24} />
-                    </button>
+                    </RepeaterButton>
                     <div className="w-10 h-14 bg-black/80 border border-cyber-glassBorder rounded flex items-center justify-center overflow-hidden relative shadow-[inset_0_0_10px_rgba(0,0,0,0.8)]">
                         <div className="text-3xl font-display text-white z-10">{value}</div>
                         {/* Shine effect */}
                         <div className="absolute top-0 left-0 w-full h-1/2 bg-gradient-to-b from-white/10 to-transparent pointer-events-none"></div>
                     </div>
-                    <button onClick={onDown} className="cyber-btn p-1 text-cyber-primary hover:text-white transition-colors">
+                    <RepeaterButton onClick={onDown} className="cyber-btn p-1 text-cyber-primary hover:text-white transition-colors">
                         <Icon name="chevron-down" size={24} />
-                    </button>
+                    </RepeaterButton>
                 </div>
             );
         };
