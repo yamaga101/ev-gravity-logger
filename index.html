@@ -444,6 +444,10 @@
             const [newLoc, setNewLoc] = useState({ name: '', voltage: 200, amperage: 15, kw: 3.0 });
             const [editingLocId, setEditingLocId] = useState(null);
 
+            useEffect(() => {
+                lucide.createIcons();
+            });
+
             const handleSaveLocation = () => {
                 if (!newLoc.name) return;
 
@@ -547,7 +551,12 @@
             // Reset selection when closing or history changes
             useEffect(() => {
                 if (!isOpen) setSelectedIds([]);
+                lucide.createIcons();
             }, [isOpen, history]);
+
+            useEffect(() => {
+                lucide.createIcons();
+            });
 
             const toggleSelect = (id) => {
                 setSelectedIds(prev =>
@@ -667,6 +676,7 @@
 
             useEffect(() => {
                 setFormData({ ...item });
+                setTimeout(() => lucide.createIcons(), 0);
             }, [item]);
 
             const handleChange = (field, value) => {
