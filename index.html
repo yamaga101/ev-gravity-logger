@@ -348,9 +348,14 @@
                             ))}
                         </div>
 
-                        {/* Display */}
-                        <div className="flex items-baseline gap-1 pointer-events-none no-select">
-                            <span className="text-2xl font-display text-cyber-primary">{value}</span>
+                        {/* Display (Editable) */}
+                        <div className="flex items-baseline gap-1 flex-1 justify-center">
+                            <input
+                                type="number"
+                                value={value}
+                                onChange={(e) => onChange(parseFloat(e.target.value))}
+                                className="w-20 bg-transparent text-2xl font-display text-cyber-primary text-center focus:outline-none appearance-none p-0"
+                            />
                             <span className="text-xs text-cyber-dim font-tech">{unit}</span>
                         </div>
 
@@ -825,8 +830,8 @@
                 localStorage.setItem(STORAGE_KEY_SESSION, JSON.stringify(session));
 
                 // Set defaults for End phase for convenience
-                setEndBattery(startBattery);
-                setEndRange(startRange);
+                setEndBattery(100);
+                setEndRange(100);
                 setEndTime(getLocalISOString());
             };
 
