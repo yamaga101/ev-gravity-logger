@@ -126,6 +126,18 @@
         .cyber-btn:active {
             transform: scale(0.95);
         }
+
+        .no-select {
+            user-select: none;
+            -webkit-user-select: none;
+        }
+
+        /* Mobile Viewport Fix */
+        .h-dvh {
+            height: 100vh;
+            /* Fallback */
+            height: 100dvh;
+        }
     </style>
 </head>
 
@@ -138,6 +150,7 @@
         const STORAGE_KEY_DATA = "ev_gravity_data_v1";
         const STORAGE_KEY_SETTINGS = "ev_gravity_settings_v1";
         const STORAGE_KEY_SESSION = "ev_gravity_session_v1";
+        const STORAGE_KEY_LOCATIONS = "ev_gravity_locations_v1";
 
         // --- Utils ---
         const generateId = () => Math.random().toString(36).substr(2, 9);
@@ -159,6 +172,44 @@
 
         const { useState, useEffect, useRef, useMemo, useCallback } = React;
         const { Engine, Render, Runner, World, Bodies, Body, Mouse, MouseConstraint, Composite, Events } = Matter;
+
+        // --- Hooks ---
+        const useRepeater = (callback, delay = 500, interval = 100) => {
+            const [isActive, setIsActive] = useState(false);
+            const timerRef = useRef(null);
+            const intervalRef = useRef(null);
+            const callbackRef = useRef(callback);
+
+            useEffect(() => { callbackRef.current = callback; }, [callback]);
+
+            const start = useCallback((e) => {
+                if (e) {
+                    if (e.type === 'touchstart') e.preventDefault(); // Prevent ghost clicks
+                    e.stopPropagation();
+                }
+                setIsActive(true);
+                callbackRef.current();
+                timerRef.current = setTimeout(() => {
+                    intervalRef.current = setInterval(() => {
+                        callbackRef.current();
+                    }, interval);
+                }, delay);
+            }, [delay, interval]);
+
+            const stop = useCallback(() => {
+                setIsActive(false);
+                clearTimeout(timerRef.current);
+                clearInterval(intervalRef.current);
+            }, []);
+
+            return {
+                onMouseDown: start,
+                onMouseUp: stop,
+                onMouseLeave: stop,
+                onTouchStart: start,
+                onTouchEnd: stop,
+            };
+        };
 
         // --- Icons ---
         const Icon = ({ name, size = 20, className = "" }) => {
@@ -252,6 +303,15 @@
         };
 
         // 2. Smart Input Components (Design System) 🎨
+        const RepeaterButton = ({ onClick, className, children }) => {
+            const handlers = useRepeater(onClick);
+            return (
+                <button {...handlers} className={`${className} no-select`} type="button">
+                    {children}
+                </button>
+            );
+        };
+
         const SmartNumberInput = ({ label, value, unit, onChange, steps = [-10, -1, 1, 10], min = 0, max = 999999 }) => {
             const adjust = (delta) => {
                 let next = parseFloat((value + delta).toFixed(1));
@@ -260,22 +320,36 @@
                 onChange(next);
             };
 
+            const handleKeyDown = (e) => {
+                if (e.key === 'ArrowUp' || e.key === 'ArrowRight') {
+                    e.preventDefault();
+                    adjust(e.shiftKey ? steps[3] : steps[2]); // +10 or +1
+                } else if (e.key === 'ArrowDown' || e.key === 'ArrowLeft') {
+                    e.preventDefault();
+                    adjust(e.shiftKey ? steps[0] : steps[1]); // -10 or -1
+                }
+            };
+
             return (
-                <div className="flex flex-col gap-1 mb-4">
+                <div className="flex flex-col gap-1 mb-2">
                     <label className="text-cyber-dim text-xs font-tech uppercase tracking-wider pl-1">{label}</label>
-                    <div className="flex items-center justify-between glass-input rounded-lg p-1">
+                    <div
+                        className="flex items-center justify-between glass-input rounded-lg p-1 focus-within:border-cyber-primary focus-within:shadow-[0_0_15px_rgba(0,240,255,0.2)]"
+                        tabIndex="0"
+                        onKeyDown={handleKeyDown}
+                    >
                         {/* Minus Buttons */}
                         <div className="flex gap-1">
                             {steps.filter(s => s < 0).map(step => (
-                                <button key={step} onClick={() => adjust(step)}
+                                <RepeaterButton key={step} onClick={() => adjust(step)}
                                     className="cyber-btn h-10 w-10 flex items-center justify-center rounded bg-cyber-dark/50 text-cyber-accent font-bold hover:bg-cyber-accent/20 transition-colors">
                                     {step}
-                                </button>
+                                </RepeaterButton>
                             ))}
                         </div>
 
                         {/* Display */}
-                        <div className="flex items-baseline gap-1">
+                        <div className="flex items-baseline gap-1 pointer-events-none no-select">
                             <span className="text-2xl font-display text-cyber-primary">{value}</span>
                             <span className="text-xs text-cyber-dim font-tech">{unit}</span>
                         </div>
@@ -283,10 +357,10 @@
                         {/* Plus Buttons */}
                         <div className="flex gap-1">
                             {steps.filter(s => s > 0).map(step => (
-                                <button key={step} onClick={() => adjust(step)}
+                                <RepeaterButton key={step} onClick={() => adjust(step)}
                                     className="cyber-btn h-10 w-10 flex items-center justify-center rounded bg-cyber-dark/50 text-cyber-primary font-bold hover:bg-cyber-primary/20 transition-colors">
                                     +{step}
-                                </button>
+                                </RepeaterButton>
                             ))}
                         </div>
                     </div>
@@ -359,17 +433,57 @@
         };
 
         // 3. Settings & History Components 👨‍💻
-        const SettingsModal = ({ isOpen, onClose, gasUrl, setGasUrl }) => {
+        const SettingsModal = ({ isOpen, onClose, gasUrl, setGasUrl, locations, setLocations }) => {
+            const [newLoc, setNewLoc] = useState({ name: '', voltage: 200, amperage: 15, kw: 3.0 });
+
+            const addLocation = () => {
+                if (!newLoc.name) return;
+                const updated = [...locations, { ...newLoc, id: generateId() }];
+                setLocations(updated);
+                setNewLoc({ name: '', voltage: 200, amperage: 15, kw: 3.0 });
+            };
+
+            const removeLocation = (id) => {
+                setLocations(locations.filter(l => l.id !== id));
+            };
+
             if (!isOpen) return null;
             return (
                 <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
-                    <div className="glass-panel w-full max-w-md rounded-2xl p-6 relative">
+                    <div className="glass-panel w-full max-w-md max-h-[90vh] overflow-y-auto rounded-2xl p-6 relative cyber-scroll">
                         <button onClick={onClose} className="absolute top-4 right-4 text-cyber-dim hover:text-white">
                             <Icon name="x" />
                         </button>
-                        <h2 className="text-xl font-display text-cyber-primary mb-4 flex items-center gap-2">
+                        <h2 className="text-xl font-display text-cyber-primary mb-6 flex items-center gap-2">
                             <Icon name="settings" /> Settings
                         </h2>
+
+                        <div className="mb-8">
+                            <h3 className="text-sm font-bold text-white mb-2 flex items-center gap-2"><Icon name="map-pin" size={16} /> Charging Locations</h3>
+                            <div className="space-y-2 mb-4">
+                                {locations.map(loc => (
+                                    <div key={loc.id} className="flex justify-between items-center bg-white/5 p-2 rounded border border-white/10">
+                                        <div>
+                                            <div className="font-bold text-cyber-primary">{loc.name}</div>
+                                            <div className="text-xs text-cyber-dim">{loc.voltage}V / {loc.amperage}A / {loc.kw}kW</div>
+                                        </div>
+                                        <button onClick={() => removeLocation(loc.id)} className="text-cyber-accent hover:text-white"><Icon name="trash-2" size={16} /></button>
+                                    </div>
+                                ))}
+                                {locations.length === 0 && <div className="text-xs text-cyber-dim italic">No locations added.</div>}
+                            </div>
+
+                            <div className="bg-black/40 p-3 rounded border border-white/10">
+                                <div className="text-xs text-cyber-dim mb-2 uppercase">Add New Location</div>
+                                <input type="text" placeholder="Name (e.g. Home)" value={newLoc.name} onChange={e => setNewLoc({ ...newLoc, name: e.target.value })} className="w-full glass-input rounded p-2 mb-2 text-sm" />
+                                <div className="grid grid-cols-3 gap-2 mb-2">
+                                    <input type="number" placeholder="V" value={newLoc.voltage} onChange={e => setNewLoc({ ...newLoc, voltage: Number(e.target.value) })} className="glass-input rounded p-2 text-sm" />
+                                    <input type="number" placeholder="A" value={newLoc.amperage} onChange={e => setNewLoc({ ...newLoc, amperage: Number(e.target.value) })} className="glass-input rounded p-2 text-sm" />
+                                    <input type="number" placeholder="kW" value={newLoc.kw} onChange={e => setNewLoc({ ...newLoc, kw: Number(e.target.value) })} className="glass-input rounded p-2 text-sm" />
+                                </div>
+                                <button onClick={addLocation} className="w-full py-2 bg-cyber-dark text-cyber-primary border border-cyber-primary rounded hover:bg-cyber-primary hover:text-black transition-colors text-sm font-bold uppercase">Add Location</button>
+                            </div>
+                        </div>
 
                         <div className="mb-4">
                             <label className="block text-sm text-cyber-dim mb-2">Google Apps Script URL</label>
@@ -377,12 +491,9 @@
                                 type="text"
                                 value={gasUrl}
                                 onChange={(e) => setGasUrl(e.target.value)}
-                                placeholder="https://script.google.com/macros/s/..."
+                                placeholder="https://script.google.com/..."
                                 className="w-full bg-cyber-black/50 border border-cyber-glassBorder rounded p-3 text-white focus:border-cyber-primary focus:outline-none"
                             />
-                            <p className="text-xs text-cyber-dim mt-2">
-                                * Deploy as Web App, set access to "Anyone". Setup your script to accept POST requests.
-                            </p>
                         </div>
 
                         <div className="flex justify-end">
@@ -485,6 +596,11 @@
                                                     <div className="text-sm font-tech text-white mt-1">
                                                         Batt: {item.battery || item.startBattery}% <Icon name="arrow-right" size={12} className="inline" /> {item.batteryAfter || item.endBattery}%
                                                     </div>
+                                                    {item.locationName && (
+                                                        <div className="text-xs text-cyber-primary mt-1 flex items-center gap-1">
+                                                            <Icon name="map-pin" size={10} /> {item.locationName}
+                                                        </div>
+                                                    )}
                                                 </div>
                                             </div>
                                             <div className="flex gap-2">
@@ -596,6 +712,9 @@
             const [endBattery, setEndBattery] = useState(80);
             const [endRange, setEndRange] = useState(350);
 
+            const [locations, setLocations] = useState([]);
+            const [selectedLocationId, setSelectedLocationId] = useState("");
+
             const [history, setHistory] = useState([]);
             const [gasUrl, setGasUrl] = useState(PRE_CONFIGURED_GAS_URL);
 
@@ -616,6 +735,10 @@
                     const parsed = JSON.parse(savedSettings);
                     setGasUrl(parsed.gasUrl || PRE_CONFIGURED_GAS_URL);
                 }
+                const savedLocations = localStorage.getItem(STORAGE_KEY_LOCATIONS);
+                if (savedLocations) {
+                    setLocations(JSON.parse(savedLocations));
+                }
 
                 const savedSession = localStorage.getItem(STORAGE_KEY_SESSION);
                 if (savedSession) {
@@ -635,6 +758,11 @@
 
                 lucide.createIcons();
             }, []);
+
+            // Save Locations
+            useEffect(() => {
+                localStorage.setItem(STORAGE_KEY_LOCATIONS, JSON.stringify(locations));
+            }, [locations]);
 
             // Physics Spawner
             const spawnDataBlock = (data) => {
@@ -679,6 +807,7 @@
 
             // Phase 1: Start Charging
             const handleStartCharging = () => {
+                const loc = locations.find(l => l.id === selectedLocationId) || {};
                 const session = {
                     id: generateId(),
                     startTime,
@@ -686,7 +815,11 @@
                     startBattery,
                     startRange,
                     efficiency,
-                    startedAt: Date.now() // For failsafes
+                    startedAt: Date.now(), // For failsafes
+                    locationName: loc.name || "",
+                    voltage: loc.voltage || "",
+                    amperage: loc.amperage || "",
+                    kw: loc.kw || ""
                 };
                 setChargingSession(session);
                 localStorage.setItem(STORAGE_KEY_SESSION, JSON.stringify(session));
@@ -737,7 +870,11 @@
                             startBattery: String(finalRecord.startBattery || ""),
                             endBattery: String(finalRecord.endBattery || ""),
                             startRange: String(finalRecord.startRange || ""),
-                            endRange: String(finalRecord.endRange || "")
+                            endRange: String(finalRecord.endRange || ""),
+                            locationName: String(finalRecord.locationName || ""),
+                            voltage: String(finalRecord.voltage || ""),
+                            amperage: String(finalRecord.amperage || ""),
+                            kw: String(finalRecord.kw || "")
                         };
 
                         // Fallback to simpler JSON if needed, but trying no-cors with JSON
@@ -799,7 +936,7 @@
                     <div className="relative z-10 w-full h-screen flex flex-col pointer-events-none">
 
                         {/* Header */}
-                        <header className="p-4 flex justify-between items-center pointer-events-auto">
+                        <header className="p-3 flex justify-between items-center pointer-events-auto">
                             <h1 className="text-2xl font-display text-white italic tracking-tighter drop-shadow-lg">
                                 EV<span className="text-cyber-primary">GRAVITY</span>
                             </h1>
@@ -816,7 +953,7 @@
                         <div className="flex-1"></div>
 
                         {/* Main Form Area */}
-                        <main className="p-4 w-full max-w-md mx-auto pointer-events-auto pb-8">
+                        <main className="p-2 w-full max-w-md mx-auto pointer-events-auto pb-4">
                             <div className="glass-panel rounded-2xl p-5 border-t border-cyber-glassBorder backdrop-blur-xl bg-black/40 shadow-2xl animate-fade-in-up">
 
                                 {/* CASE 1: IDLE (Start Charging) */}
@@ -861,6 +998,28 @@
                                             min={0} max={20}
                                             onChange={setEfficiency}
                                         />
+
+                                        {/* Location Selector */}
+                                        <div className="mb-2">
+                                            <label className="text-cyber-dim text-xs font-tech uppercase tracking-wider pl-1 font-bold flex items-center gap-2">
+                                                <Icon name="map-pin" size={12} /> Charging Location
+                                            </label>
+                                            <div className="relative">
+                                                <select
+                                                    value={selectedLocationId}
+                                                    onChange={(e) => setSelectedLocationId(e.target.value)}
+                                                    className="w-full glass-input rounded-lg p-3 text-cyber-primary appearance-none focus:outline-none bg-black/50"
+                                                >
+                                                    <option value="">-- Manual / Unspecified --</option>
+                                                    {locations.map(loc => (
+                                                        <option key={loc.id} value={loc.id}>{loc.name} ({loc.kw}kW)</option>
+                                                    ))}
+                                                </select>
+                                                <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-cyber-primary">
+                                                    <Icon name="chevron-down" size={16} />
+                                                </div>
+                                            </div>
+                                        </div>
 
                                         <button
                                             onClick={handleStartCharging}
@@ -950,6 +1109,8 @@
                         onClose={() => setShowSettings(false)}
                         gasUrl={gasUrl}
                         setGasUrl={setGasUrl}
+                        locations={locations}
+                        setLocations={setLocations}
                     />
 
                     <HistoryList
