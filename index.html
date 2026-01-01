@@ -181,18 +181,12 @@
             const intervalRef = useRef(null);
             const callbackRef = useRef(callback);
             const isActiveRef = useRef(false);
+            const isTouchDevice = useRef(false);
+            const lastEventTime = useRef(0);
 
             useEffect(() => { callbackRef.current = callback; }, [callback]);
 
-            useEffect(() => {
-                // Cleanup on unmount
-                return () => {
-                    clearTimeout(timerRef.current);
-                    clearInterval(intervalRef.current);
-                };
-            }, []);
-
-            const stop = useCallback(() => {
+            const cleanup = useCallback(() => {
                 isActiveRef.current = false;
                 if (timerRef.current) {
                     clearTimeout(timerRef.current);
@@ -204,14 +198,49 @@
                 }
             }, []);
 
+            useEffect(() => {
+                // Global cleanup on window events to ensure stop on Android
+                const handleGlobalEnd = () => {
+                    if (isActiveRef.current) {
+                        cleanup();
+                    }
+                };
+
+                window.addEventListener('touchend', handleGlobalEnd, { passive: false });
+                window.addEventListener('touchcancel', handleGlobalEnd, { passive: false });
+                window.addEventListener('mouseup', handleGlobalEnd);
+
+                return () => {
+                    cleanup();
+                    window.removeEventListener('touchend', handleGlobalEnd);
+                    window.removeEventListener('touchcancel', handleGlobalEnd);
+                    window.removeEventListener('mouseup', handleGlobalEnd);
+                };
+            }, [cleanup]);
+
             const start = useCallback((e) => {
-                if (e) {
-                    e.preventDefault();
-                    e.stopPropagation();
+                if (!e) return;
+
+                const now = Date.now();
+                const eventType = e.type;
+
+                // Deduplicate touch and mouse events
+                if (eventType.startsWith('touch')) {
+                    isTouchDevice.current = true;
+                } else if (eventType.startsWith('mouse') && isTouchDevice.current) {
+                    return; // Ignore mouse if we've seen touch
                 }
 
-                // Immediately stop any existing timers
-                stop();
+                // Debounce: ignore events within 50ms
+                if (now - lastEventTime.current < 50) {
+                    return;
+                }
+                lastEventTime.current = now;
+
+                e.preventDefault();
+                e.stopPropagation();
+
+                cleanup();
 
                 isActiveRef.current = true;
                 callbackRef.current();
@@ -225,15 +254,23 @@
                         }, interval);
                     }
                 }, delay);
-            }, [delay, interval, stop]);
+            }, [delay, interval, cleanup]);
+
+            const stop = useCallback((e) => {
+                if (e) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                }
+                cleanup();
+            }, [cleanup]);
 
             return {
-                onMouseDown: start,
-                onMouseUp: stop,
-                onMouseLeave: stop,
                 onTouchStart: start,
                 onTouchEnd: stop,
                 onTouchCancel: stop,
+                onMouseDown: start,
+                onMouseUp: stop,
+                onMouseLeave: stop,
             };
         };
 
