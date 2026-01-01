@@ -179,15 +179,10 @@
         const useRepeater = (callback, delay = 500, interval = 100) => {
             const timerRef = useRef(null);
             const intervalRef = useRef(null);
-            const callbackRef = useRef(callback);
-            const isActiveRef = useRef(false);
-            const isTouchDevice = useRef(false);
-            const lastEventTime = useRef(0);
-
-            useEffect(() => { callbackRef.current = callback; }, [callback]);
+            const isRunningRef = useRef(false);
 
             const cleanup = useCallback(() => {
-                isActiveRef.current = false;
+                isRunningRef.current = false;
                 if (timerRef.current) {
                     clearTimeout(timerRef.current);
                     timerRef.current = null;
@@ -198,80 +193,28 @@
                 }
             }, []);
 
+            // Cleanup on unmount
             useEffect(() => {
-                // Global cleanup on window events to ensure stop on Android
-                const handleGlobalEnd = () => {
-                    if (isActiveRef.current) {
-                        cleanup();
-                    }
-                };
-
-                window.addEventListener('touchend', handleGlobalEnd, { passive: false });
-                window.addEventListener('touchcancel', handleGlobalEnd, { passive: false });
-                window.addEventListener('mouseup', handleGlobalEnd);
-
-                return () => {
-                    cleanup();
-                    window.removeEventListener('touchend', handleGlobalEnd);
-                    window.removeEventListener('touchcancel', handleGlobalEnd);
-                    window.removeEventListener('mouseup', handleGlobalEnd);
-                };
+                return cleanup;
             }, [cleanup]);
 
-            const start = useCallback((e) => {
-                if (!e) return;
-
-                const now = Date.now();
-                const eventType = e.type;
-
-                // Deduplicate touch and mouse events
-                if (eventType.startsWith('touch')) {
-                    isTouchDevice.current = true;
-                } else if (eventType.startsWith('mouse') && isTouchDevice.current) {
-                    return; // Ignore mouse if we've seen touch
-                }
-
-                // Debounce: ignore events within 50ms
-                if (now - lastEventTime.current < 50) {
-                    return;
-                }
-                lastEventTime.current = now;
-
-                e.preventDefault();
-                e.stopPropagation();
-
+            const start = useCallback(() => {
                 cleanup();
-
-                isActiveRef.current = true;
-                callbackRef.current();
+                isRunningRef.current = true;
+                callback();
 
                 timerRef.current = setTimeout(() => {
-                    if (isActiveRef.current) {
+                    if (isRunningRef.current) {
                         intervalRef.current = setInterval(() => {
-                            if (isActiveRef.current) {
-                                callbackRef.current();
+                            if (isRunningRef.current) {
+                                callback();
                             }
                         }, interval);
                     }
                 }, delay);
-            }, [delay, interval, cleanup]);
+            }, [callback, delay, interval, cleanup]);
 
-            const stop = useCallback((e) => {
-                if (e) {
-                    e.preventDefault();
-                    e.stopPropagation();
-                }
-                cleanup();
-            }, [cleanup]);
-
-            return {
-                onTouchStart: start,
-                onTouchEnd: stop,
-                onTouchCancel: stop,
-                onMouseDown: start,
-                onMouseUp: stop,
-                onMouseLeave: stop,
-            };
+            return { start, stop: cleanup };
         };
 
         // --- Icons ---
@@ -367,17 +310,29 @@
 
         // 2. Smart Input Components (Design System) 🎨
         const RepeaterButton = ({ onClick, className, children }) => {
-            const handlers = useRepeater(onClick);
+            const repeater = useRepeater(onClick);
 
-            const handleClick = (e) => {
+            const handleStart = (e) => {
                 e.preventDefault();
                 e.stopPropagation();
+                repeater.start();
+            };
+
+            const handleStop = (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                repeater.stop();
             };
 
             return (
                 <button
-                    {...handlers}
-                    onClick={handleClick}
+                    onTouchStart={handleStart}
+                    onTouchEnd={handleStop}
+                    onTouchCancel={handleStop}
+                    onMouseDown={handleStart}
+                    onMouseUp={handleStop}
+                    onMouseLeave={handleStop}
+                    onClick={(e) => e.preventDefault()}
                     className={`${className} no-select`}
                     type="button"
                 >
@@ -771,12 +726,28 @@
                         </h2>
 
                         <div className="space-y-4">
-                            <div className="grid grid-cols-2 gap-4">
-                                <DateTimeInput label="Start" value={formData.startTime || formData.timestamp} onChange={(v) => handleChange('startTime', v)} />
-                                <DateTimeInput label="End" value={formData.endTime || ''} onChange={(v) => handleChange('endTime', v)} />
+                            {/* Date Inputs - Stacked */}
+                            <div className="mb-3">
+                                <label className="text-cyber-dim text-xs font-tech uppercase mb-1 block">Start</label>
+                                <input type="datetime-local" value={formData.startTime || formData.timestamp || ''} onChange={(e) => handleChange('startTime', e.target.value)} className="glass-input rounded p-2 text-sm w-full" />
+                            </div>
+                            <div className="mb-3">
+                                <label className="text-cyber-dim text-xs font-tech uppercase mb-1 block">End</label>
+                                <input type="datetime-local" value={formData.endTime || ''} onChange={(e) => handleChange('endTime', e.target.value)} className="glass-input rounded p-2 text-sm w-full" />
                             </div>
 
-                            <SmartNumberInput label="Odometer" value={Number(formData.odometer)} unit="km" steps={[-100, -10, 10, 100]} onChange={(v) => handleChange('odometer', v)} />
+                            {/* Odometer - Compact */}
+                            <div className="mb-3">
+                                <label className="text-cyber-dim text-xs font-tech uppercase mb-1 block">Odometer (km)</label>
+                                <div className="flex items-center gap-1 glass-input rounded p-2">
+                                    <button onClick={() => handleChange('odometer', Number(formData.odometer || 0) - 100)} className="cyber-btn h-8 w-12 flex items-center justify-center rounded bg-cyber-dark/50 text-cyber-accent text-xs font-bold">-100</button>
+                                    <button onClick={() => handleChange('odometer', Number(formData.odometer || 0) - 10)} className="cyber-btn h-8 w-10 flex items-center justify-center rounded bg-cyber-dark/50 text-cyber-accent text-xs font-bold">-10</button>
+                                    <input type="number" value={Number(formData.odometer || 0)} onChange={(e) => handleChange('odometer', Number(e.target.value))} className="flex-1 bg-transparent text-center text-lg font-display text-cyber-primary focus:outline-none" />
+                                    <button onClick={() => handleChange('odometer', Number(formData.odometer || 0) + 10)} className="cyber-btn h-8 w-10 flex items-center justify-center rounded bg-cyber-dark/50 text-cyber-primary text-xs font-bold">+10</button>
+                                    <button onClick={() => handleChange('odometer', Number(formData.odometer || 0) + 100)} className="cyber-btn h-8 w-12 flex items-center justify-center rounded bg-cyber-dark/50 text-cyber-primary text-xs font-bold">+100</button>
+                                </div>
+                            </div>
+
                             <SmartNumberInput label="Efficiency" value={Number(formData.efficiency)} unit="km/kWh" steps={[-1, -0.1, 0.1, 1]} min={0} max={20} onChange={(v) => handleChange('efficiency', v)} />
 
                             <div className="p-3 border border-cyber-glassBorder rounded-lg bg-white/5">
@@ -1065,9 +1036,9 @@
 
                         <div className="flex-1"></div>
 
-                        {/* Main Form Area */}
-                        <main className="p-2 w-full max-w-md mx-auto pointer-events-auto pb-4">
-                            <div className="glass-panel rounded-2xl p-5 border-t border-cyber-glassBorder backdrop-blur-xl bg-black/40 shadow-2xl animate-fade-in-up">
+                        {/* Main Form Area - Scrollable */}
+                        <main className="p-2 w-full max-w-md mx-auto pointer-events-auto overflow-y-auto" style={{ maxHeight: 'calc(100dvh - 120px)' }}>
+                            <div className="glass-panel rounded-2xl p-4 border-t border-cyber-glassBorder backdrop-blur-xl bg-black/40 shadow-2xl animate-fade-in-up">
 
                                 {/* CASE 1: IDLE (Start Charging) */}
                                 {!chargingSession && (
