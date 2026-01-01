@@ -177,32 +177,55 @@
 
         // --- Hooks ---
         const useRepeater = (callback, delay = 500, interval = 100) => {
-            const [isActive, setIsActive] = useState(false);
             const timerRef = useRef(null);
             const intervalRef = useRef(null);
             const callbackRef = useRef(callback);
+            const isActiveRef = useRef(false);
 
             useEffect(() => { callbackRef.current = callback; }, [callback]);
 
-            const start = useCallback((e) => {
-                if (e) {
-                    if (e.type === 'touchstart') e.preventDefault(); // Prevent ghost clicks
-                    e.stopPropagation();
-                }
-                setIsActive(true);
-                callbackRef.current();
-                timerRef.current = setTimeout(() => {
-                    intervalRef.current = setInterval(() => {
-                        callbackRef.current();
-                    }, interval);
-                }, delay);
-            }, [delay, interval]);
+            useEffect(() => {
+                // Cleanup on unmount
+                return () => {
+                    clearTimeout(timerRef.current);
+                    clearInterval(intervalRef.current);
+                };
+            }, []);
 
             const stop = useCallback(() => {
-                setIsActive(false);
-                clearTimeout(timerRef.current);
-                clearInterval(intervalRef.current);
+                isActiveRef.current = false;
+                if (timerRef.current) {
+                    clearTimeout(timerRef.current);
+                    timerRef.current = null;
+                }
+                if (intervalRef.current) {
+                    clearInterval(intervalRef.current);
+                    intervalRef.current = null;
+                }
             }, []);
+
+            const start = useCallback((e) => {
+                if (e) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                }
+
+                // Immediately stop any existing timers
+                stop();
+
+                isActiveRef.current = true;
+                callbackRef.current();
+
+                timerRef.current = setTimeout(() => {
+                    if (isActiveRef.current) {
+                        intervalRef.current = setInterval(() => {
+                            if (isActiveRef.current) {
+                                callbackRef.current();
+                            }
+                        }, interval);
+                    }
+                }, delay);
+            }, [delay, interval, stop]);
 
             return {
                 onMouseDown: start,
@@ -210,6 +233,7 @@
                 onMouseLeave: stop,
                 onTouchStart: start,
                 onTouchEnd: stop,
+                onTouchCancel: stop,
             };
         };
 
@@ -307,8 +331,19 @@
         // 2. Smart Input Components (Design System) 🎨
         const RepeaterButton = ({ onClick, className, children }) => {
             const handlers = useRepeater(onClick);
+
+            const handleClick = (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+            };
+
             return (
-                <button {...handlers} className={`${className} no-select`} type="button">
+                <button
+                    {...handlers}
+                    onClick={handleClick}
+                    className={`${className} no-select`}
+                    type="button"
+                >
                     {children}
                 </button>
             );
@@ -709,18 +744,14 @@
 
                             <div className="p-3 border border-cyber-glassBorder rounded-lg bg-white/5">
                                 <div className="text-xs text-cyber-dim mb-2 uppercase tracking-widest">Start Conditions</div>
-                                <div className="grid grid-cols-2 gap-4">
-                                    <SmartNumberInput label="Batt %" value={Number(formData.startBattery || formData.battery || 0)} unit="%" onChange={(v) => handleChange('startBattery', v)} />
-                                    <SmartNumberInput label="Range" value={Number(formData.startRange || 0)} unit="km" onChange={(v) => handleChange('startRange', v)} />
-                                </div>
+                                <SmartNumberInput label="Batt %" value={Number(formData.startBattery || formData.battery || 0)} unit="%" onChange={(v) => handleChange('startBattery', v)} />
+                                <SmartNumberInput label="Range" value={Number(formData.startRange || 0)} unit="km" onChange={(v) => handleChange('startRange', v)} />
                             </div>
 
                             <div className="p-3 border border-cyber-glassBorder rounded-lg bg-white/5">
                                 <div className="text-xs text-cyber-dim mb-2 uppercase tracking-widest">End Conditions</div>
-                                <div className="grid grid-cols-2 gap-4">
-                                    <SmartNumberInput label="Batt %" value={Number(formData.endBattery || formData.batteryAfter || 0)} unit="%" onChange={(v) => handleChange('endBattery', v)} />
-                                    <SmartNumberInput label="Range" value={Number(formData.endRange || 0)} unit="km" onChange={(v) => handleChange('endRange', v)} />
-                                </div>
+                                <SmartNumberInput label="Batt %" value={Number(formData.endBattery || formData.batteryAfter || 0)} unit="%" onChange={(v) => handleChange('endBattery', v)} />
+                                <SmartNumberInput label="Range" value={Number(formData.endRange || 0)} unit="km" onChange={(v) => handleChange('endRange', v)} />
                             </div>
 
                             <div className="flex gap-2 mt-4">
