@@ -180,6 +180,12 @@
             const timeoutIdRef = useRef(null);
             const intervalIdRef = useRef(null);
             const isRunningRef = useRef(false);
+            const callbackRef = useRef(callback);
+
+            // Keep callback ref updated
+            useEffect(() => {
+                callbackRef.current = callback;
+            }, [callback]);
 
             const stop = useCallback(() => {
                 isRunningRef.current = false;
@@ -194,27 +200,30 @@
             }, []);
 
             const start = useCallback(() => {
-                if (isRunningRef.current) return; // Prevent double-start
+                if (isRunningRef.current) return;
 
-                stop(); // Clean any existing timers
+                stop();
                 isRunningRef.current = true;
 
-                callback(); // Execute immediately
+                // Execute immediately
+                callbackRef.current();
 
+                // Set up delayed repeat
                 timeoutIdRef.current = setTimeout(() => {
                     if (!isRunningRef.current) return;
+
                     intervalIdRef.current = setInterval(() => {
-                        if (!isRunningRef.current) {
-                            stop();
+                        if (isRunningRef.current) {
+                            callbackRef.current();
                         } else {
-                            callback();
+                            stop();
                         }
                     }, interval);
                 }, delay);
-            }, [callback, delay, interval, stop]);
+            }, [delay, interval, stop]);
 
             useEffect(() => {
-                return stop; // Cleanup on unmount
+                return stop;
             }, [stop]);
 
             return { start, stop };
@@ -815,27 +824,117 @@
             const [editingItem, setEditingItem] = useState(null);
             const [isSaving, setIsSaving] = useState(false);
 
-            // Load Data & Session
+            // Load from LocalStorage on mount
             useEffect(() => {
-                const savedData = localStorage.getItem(STORAGE_KEY_DATA);
-                if (savedData) {
-                    const parsed = JSON.parse(savedData);
-                    setHistory(parsed);
-                }
-                const savedSettings = localStorage.getItem(STORAGE_KEY_SETTINGS);
-                if (savedSettings) {
-                    const parsed = JSON.parse(savedSettings);
-                    setGasUrl(parsed.gasUrl || PRE_CONFIGURED_GAS_URL);
-                }
-                const savedLocations = localStorage.getItem(STORAGE_KEY_LOCATIONS);
-                if (savedLocations) {
-                    setLocations(JSON.parse(savedLocations));
-                }
-
                 const savedSession = localStorage.getItem(STORAGE_KEY_SESSION);
+                const savedHistory = localStorage.getItem(STORAGE_KEY_DATA); // Corrected key from STORAGE_KEY_HISTORY to STORAGE_KEY_DATA
+                const savedGasUrl = localStorage.getItem(STORAGE_KEY_SETTINGS); // Corrected key from STORAGE_KEY_GAS_URL to STORAGE_KEY_SETTINGS
+                const savedLocations = localStorage.getItem(STORAGE_KEY_LOCATIONS);
+
+                if (savedSession) {
+                    try {
+                        setChargingSession(JSON.parse(savedSession));
+                    } catch (e) { console.error('Failed to parse session', e); }
+                }
+                if (savedHistory) {
+                    try {
+                        setHistory(JSON.parse(savedHistory));
+                    } catch (e) { console.error('Failed to parse history', e); }
+                }
+                if (savedGasUrl) { // Check if savedGasUrl exists before parsing as JSON
+                    try {
+                        const parsedSettings = JSON.parse(savedGasUrl);
+                        setGasUrl(parsedSettings.gasUrl || PRE_CONFIGURED_GAS_URL);
+                    } catch (e) { console.error('Failed to parse settings', e); }
+                }
+                if (savedLocations) {
+                    try {
+                        setLocations(JSON.parse(savedLocations));
+                    } catch (e) { console.error('Failed to parse locations', e); }
+                }
+            }, []);
+
+            // Spawn physics blocks for START phase values (immediate)
+            useEffect(() => {
+                if (!engine || chargingSession) return;
+                const text = `${startBattery}%`;
+                const color = getRandomColor();
+                const x = Math.random() * window.innerWidth;
+                const block = Bodies.rectangle(x, -50, 60, 40, {
+                    restitution: 0.6,
+                    friction: 0.3,
+                    render: { fillStyle: color }
+                });
+                block.label = text;
+                World.add(engine.world, block);
+            }, [startBattery, engine, chargingSession]);
+
+            useEffect(() => {
+                if (!engine || chargingSession) return;
+                const text = `${startRange}km`;
+                const color = getRandomColor();
+                const x = Math.random() * window.innerWidth;
+                const block = Bodies.rectangle(x, -50, 70, 40, {
+                    restitution: 0.6,
+                    friction: 0.3,
+                    render: { fillStyle: color }
+                });
+                block.label = text;
+                World.add(engine.world, block);
+            }, [startRange, engine, chargingSession]);
+
+            useEffect(() => {
+                if (!engine || chargingSession) return;
+                const text = `${odometer}km`;
+                const color = getRandomColor();
+                const x = Math.random() * window.innerWidth;
+                const block = Bodies.rectangle(x, -50, 80, 40, {
+                    restitution: 0.6,
+                    friction: 0.3,
+                    render: { fillStyle: color }
+                });
+                block.label = text;
+                World.add(engine.world, block);
+            }, [odometer, engine, chargingSession]);
+
+            // Spawn physics blocks for END phase values (immediate)
+            useEffect(() => {
+                if (!engine || !chargingSession) return;
+                const text = `${endBattery}%`;
+                const color = getRandomColor();
+                const x = Math.random() * window.innerWidth;
+                const block = Bodies.rectangle(x, -50, 60, 40, {
+                    restitution: 0.6,
+                    friction: 0.3,
+                    render: { fillStyle: color }
+                });
+                block.label = text;
+                World.add(engine.world, block);
+            }, [endBattery, engine, chargingSession]);
+
+            useEffect(() => {
+                if (!engine || !chargingSession) return;
+                const text = `${endRange}km`;
+                const color = getRandomColor();
+                const x = Math.random() * window.innerWidth;
+                const block = Bodies.rectangle(x, -50, 70, 40, {
+                    restitution: 0.6,
+                    friction: 0.3,
+                    render: { fillStyle: color }
+                });
+                block.label = text;
+                World.add(engine.world, block);
+            }, [endRange, engine, chargingSession]);
+            // Load Data & Session (Original block, partially replaced by the new useEffect above)
+            useEffect(() => {
+                // The new useEffect above handles most of the initial loading.
+                // This block now only handles the logic for hydrating End Form defaults
+                // and inheriting Odometer if no session.
+                const savedData = localStorage.getItem(STORAGE_KEY_DATA); // Re-fetch savedData for odometer logic
+                const savedSession = localStorage.getItem(STORAGE_KEY_SESSION); // Re-fetch savedSession for end form defaults
+
                 if (savedSession) {
                     const session = JSON.parse(savedSession);
-                    setChargingSession(session);
                     // Hydrate End Form defaults based on session
                     setEndBattery(Math.min(session.startBattery + 20, 100)); // Guess +20%
                     setEndRange(session.startRange + 50); // Guess +50km
