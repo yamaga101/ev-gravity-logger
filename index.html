@@ -177,44 +177,47 @@
 
         // --- Hooks ---
         const useRepeater = (callback, delay = 500, interval = 100) => {
-            const timerRef = useRef(null);
-            const intervalRef = useRef(null);
+            const timeoutIdRef = useRef(null);
+            const intervalIdRef = useRef(null);
             const isRunningRef = useRef(false);
 
-            const cleanup = useCallback(() => {
+            const stop = useCallback(() => {
                 isRunningRef.current = false;
-                if (timerRef.current) {
-                    clearTimeout(timerRef.current);
-                    timerRef.current = null;
+                if (timeoutIdRef.current) {
+                    clearTimeout(timeoutIdRef.current);
+                    timeoutIdRef.current = null;
                 }
-                if (intervalRef.current) {
-                    clearInterval(intervalRef.current);
-                    intervalRef.current = null;
+                if (intervalIdRef.current) {
+                    clearInterval(intervalIdRef.current);
+                    intervalIdRef.current = null;
                 }
             }, []);
 
-            // Cleanup on unmount
-            useEffect(() => {
-                return cleanup;
-            }, [cleanup]);
-
             const start = useCallback(() => {
-                cleanup();
+                if (isRunningRef.current) return; // Prevent double-start
+
+                stop(); // Clean any existing timers
                 isRunningRef.current = true;
-                callback();
 
-                timerRef.current = setTimeout(() => {
-                    if (isRunningRef.current) {
-                        intervalRef.current = setInterval(() => {
-                            if (isRunningRef.current) {
-                                callback();
-                            }
-                        }, interval);
-                    }
+                callback(); // Execute immediately
+
+                timeoutIdRef.current = setTimeout(() => {
+                    if (!isRunningRef.current) return;
+                    intervalIdRef.current = setInterval(() => {
+                        if (!isRunningRef.current) {
+                            stop();
+                        } else {
+                            callback();
+                        }
+                    }, interval);
                 }, delay);
-            }, [callback, delay, interval, cleanup]);
+            }, [callback, delay, interval, stop]);
 
-            return { start, stop: cleanup };
+            useEffect(() => {
+                return stop; // Cleanup on unmount
+            }, [stop]);
+
+            return { start, stop };
         };
 
         // --- Icons ---
@@ -311,29 +314,34 @@
         // 2. Smart Input Components (Design System) 🎨
         const RepeaterButton = ({ onClick, className, children }) => {
             const repeater = useRepeater(onClick);
+            const hasStartedRef = useRef(false);
 
-            const handleStart = (e) => {
+            const handlePointerDown = (e) => {
                 e.preventDefault();
-                e.stopPropagation();
+                if (hasStartedRef.current) return;
+                hasStartedRef.current = true;
                 repeater.start();
             };
 
-            const handleStop = (e) => {
+            const handlePointerUp = (e) => {
                 e.preventDefault();
-                e.stopPropagation();
+                hasStartedRef.current = false;
+                repeater.stop();
+            };
+
+            const handlePointerCancel = (e) => {
+                e.preventDefault();
+                hasStartedRef.current = false;
                 repeater.stop();
             };
 
             return (
                 <button
-                    onTouchStart={handleStart}
-                    onTouchEnd={handleStop}
-                    onTouchCancel={handleStop}
-                    onMouseDown={handleStart}
-                    onMouseUp={handleStop}
-                    onMouseLeave={handleStop}
-                    onClick={(e) => e.preventDefault()}
-                    className={`${className} no-select`}
+                    onPointerDown={handlePointerDown}
+                    onPointerUp={handlePointerUp}
+                    onPointerCancel={handlePointerCancel}
+                    onPointerLeave={handlePointerUp}
+                    className={`${className} no-select touch-none`}
                     type="button"
                 >
                     {children}
@@ -1037,13 +1045,13 @@
                         <div className="flex-1"></div>
 
                         {/* Main Form Area - Scrollable */}
-                        <main className="p-2 w-full max-w-md mx-auto pointer-events-auto overflow-y-auto" style={{ maxHeight: 'calc(100dvh - 120px)' }}>
+                        <main className="p-2 w-full max-w-md mx-auto pointer-events-auto overflow-y-auto pb-6" style={{ maxHeight: 'calc(100dvh - 100px)' }}>
                             <div className="glass-panel rounded-2xl p-4 border-t border-cyber-glassBorder backdrop-blur-xl bg-black/40 shadow-2xl animate-fade-in-up">
 
                                 {/* CASE 1: IDLE (Start Charging) */}
                                 {!chargingSession && (
                                     <>
-                                        <div className="flex items-center gap-2 mb-4 text-cyber-primary">
+                                        <div className="flex items-center gap-2 mb-2 text-cyber-primary">
                                             <Icon name="plug-zap" />
                                             <h2 className="text-lg font-display">START CHARGING</h2>
                                         </div>
