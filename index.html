@@ -342,6 +342,7 @@
                     onPointerCancel={handlePointerCancel}
                     onPointerLeave={handlePointerUp}
                     className={`${className} no-select touch-none`}
+                    style={{ touchAction: 'none' }}
                     type="button"
                 >
                     {children}
@@ -1045,13 +1046,13 @@
                         <div className="flex-1"></div>
 
                         {/* Main Form Area - Scrollable */}
-                        <main className="p-2 w-full max-w-md mx-auto pointer-events-auto overflow-y-auto pb-6" style={{ maxHeight: 'calc(100dvh - 100px)' }}>
+                        <main className="p-2 w-full max-w-md mx-auto pointer-events-auto overflow-y-auto pb-12" style={{ maxHeight: 'calc(100dvh - 100px)' }}>
                             <div className="glass-panel rounded-2xl p-4 border-t border-cyber-glassBorder backdrop-blur-xl bg-black/40 shadow-2xl animate-fade-in-up">
 
                                 {/* CASE 1: IDLE (Start Charging) */}
                                 {!chargingSession && (
                                     <>
-                                        <div className="flex items-center gap-2 mb-2 text-cyber-primary">
+                                        <div className="flex items-center gap-2 mb-1 text-cyber-primary">
                                             <Icon name="plug-zap" />
                                             <h2 className="text-lg font-display">START CHARGING</h2>
                                         </div>
