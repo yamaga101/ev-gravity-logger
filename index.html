@@ -728,36 +728,36 @@
                 <div key={0} className="slide-in text-center">
                     <div className="text-6xl mb-4">{'\u26A1'}</div>
                     <h2 className="text-3xl font-display text-cyber-primary text-neon mb-4">EV GRAVITY LOGGER</h2>
-                    <p className="text-cyber-text text-lg mb-2">EV充電セッションを記録・分析</p>
-                    <p className="text-cyber-dim text-sm">サイバーパンクUIで充電管理を楽しく</p>
+                    <p className="text-cyber-text text-lg mb-2">{t.welcomeSub1}</p>
+                    <p className="text-cyber-dim text-sm">{t.welcomeSub2}</p>
                     <div className="mt-8 glass-panel rounded-lg p-4 text-left">
-                        <div className="flex items-center gap-2 text-cyber-primary mb-2"><Icon name="battery-charging" size={16} /> 2フェーズ充電記録</div>
-                        <div className="flex items-center gap-2 text-cyber-primary mb-2"><Icon name="bar-chart-3" size={16} /> 統計ダッシュボード</div>
-                        <div className="flex items-center gap-2 text-cyber-primary mb-2"><Icon name="download" size={16} /> CSVエクスポート</div>
-                        <div className="flex items-center gap-2 text-cyber-primary"><Icon name="cloud" size={16} /> Google Sheets連携</div>
+                        <div className="flex items-center gap-2 text-cyber-primary mb-2"><Icon name="battery-charging" size={16} /> {t.feat1}</div>
+                        <div className="flex items-center gap-2 text-cyber-primary mb-2"><Icon name="bar-chart-3" size={16} /> {t.feat2}</div>
+                        <div className="flex items-center gap-2 text-cyber-primary mb-2"><Icon name="download" size={16} /> {t.feat3}</div>
+                        <div className="flex items-center gap-2 text-cyber-primary"><Icon name="cloud" size={16} /> {t.feat4}</div>
                     </div>
                 </div>,
                 // Step 1: Vehicle settings
                 <div key={1} className="slide-in">
                     <h2 className="text-xl font-display text-cyber-primary mb-6 flex items-center gap-2">
-                        <Icon name="car" /> Vehicle Settings
+                        <Icon name="car" /> {t.vehicleSettings}
                     </h2>
                     <div className="space-y-4">
                         <div>
-                            <label className="text-cyber-dim text-xs font-tech uppercase block mb-1">Battery Capacity (kWh)</label>
+                            <label className="text-cyber-dim text-xs font-tech uppercase block mb-1">{t.batteryCapacity}</label>
                             <input type="number" value={capacity} onChange={e => setCapacity(Number(e.target.value))}
                                 className="w-full glass-input rounded-lg p-3 text-xl font-display text-center" />
-                            <p className="text-xs text-cyber-dim mt-1">AZE0 Leaf = 30kWh</p>
+                            <p className="text-xs text-cyber-dim mt-1">{t.azHint}</p>
                         </div>
                         <div>
-                            <label className="text-cyber-dim text-xs font-tech uppercase block mb-1">Electricity Rate (JPY/kWh)</label>
+                            <label className="text-cyber-dim text-xs font-tech uppercase block mb-1">{t.electricityRate}</label>
                             <input type="number" value={rate} onChange={e => setRate(Number(e.target.value))} step="0.01"
                                 className="w-full glass-input rounded-lg p-3 text-xl font-display text-center" />
                         </div>
                         <div className="flex items-center gap-3 mt-2">
                             <input type="checkbox" checked={useNightRate} onChange={e => setUseNightRate(e.target.checked)}
                                 className="w-5 h-5 accent-cyber-primary" />
-                            <label className="text-cyber-dim text-sm">Night Rate</label>
+                            <label className="text-cyber-dim text-sm">{t.nightRate}</label>
                             {useNightRate && (
                                 <input type="number" value={nightRate} onChange={e => setNightRate(Number(e.target.value))} step="0.01"
                                     className="glass-input rounded p-2 text-sm w-24 ml-auto" />
@@ -768,13 +768,13 @@
                 // Step 2: GAS URL
                 <div key={2} className="slide-in">
                     <h2 className="text-xl font-display text-cyber-primary mb-6 flex items-center gap-2">
-                        <Icon name="cloud" /> Google Sheets Link
+                        <Icon name="cloud" /> {t.gSheetLink}
                     </h2>
-                    <p className="text-cyber-dim text-sm mb-4">Google Apps Script URLを設定すると、充電データが自動的にスプレッドシートに送信されます。</p>
+                    <p className="text-cyber-dim text-sm mb-4">{t.gSheetDesc}</p>
                     <input type="text" value={gasUrl} onChange={e => setGasUrl(e.target.value)}
                         placeholder="https://script.google.com/..."
                         className="w-full glass-input rounded-lg p-3 text-sm mb-4" />
-                    <p className="text-xs text-cyber-dim">後から設定画面で変更できます。スキップ可。</p>
+                    <p className="text-xs text-cyber-dim">{t.gSheetHint}</p>
                 </div>
             ];
 
@@ -804,11 +804,11 @@
                             <div className="mt-6">
                                 <button onClick={handleNext}
                                     className="w-full py-4 rounded-xl font-display font-bold text-lg tracking-widest uppercase bg-gradient-to-r from-cyber-primary to-cyber-secondary text-black hover:shadow-lg transition-all">
-                                    {step < steps.length - 1 ? 'NEXT' : 'START'}
+                                    {step < steps.length - 1 ? t.next : t.startCharging}
                                 </button>
                                 {step > 0 && (
                                     <button onClick={() => setStep(step - 1)} className="w-full mt-2 py-2 text-cyber-dim text-sm hover:text-white">
-                                        Back
+                                        {t.back}
                                     </button>
                                 )}
                             </div>
@@ -843,7 +843,7 @@
         };
 
         // --- Live Charging Screen ---
-        const LiveChargingScreen = ({ session, settings, endTime, setEndTime, endBattery, setEndBattery, endRange, setEndRange, onComplete, onCancel, isSaving, validationErrors }) => {
+        const LiveChargingScreen = ({ session, settings, endTime, setEndTime, endBattery, setEndBattery, endRange, setEndRange, onComplete, onCancel, isSaving, validationErrors, t }) => {
             const [elapsed, setElapsed] = useState(0);
 
             useEffect(() => {
@@ -875,9 +875,9 @@
                     <div className="flex justify-between items-start mb-4">
                         <div className="flex items-center gap-2 text-cyber-accent">
                             <Icon name="battery-charging" />
-                            <h2 className="text-lg font-display animate-pulse">CHARGING...</h2>
+                            <h2 className="text-lg font-display animate-pulse">{t.charging}</h2>
                         </div>
-                        <button onClick={onCancel} className="text-xs text-cyber-dim underline hover:text-white">Cancel</button>
+                        <button onClick={onCancel} className="text-xs text-cyber-dim underline hover:text-white">{t.cancel}</button>
                     </div>
 
                     {/* Progress Ring + Timer */}
@@ -885,22 +885,22 @@
                         <ProgressRing radius={70} stroke={6} progress={progress} />
                         <div className="absolute text-center">
                             <div className="text-3xl font-display text-cyber-primary text-neon">{formatTimer(elapsed)}</div>
-                            <div className="text-xs text-cyber-dim">elapsed</div>
+                            <div className="text-xs text-cyber-dim">{t.elapsed}</div>
                         </div>
                     </div>
 
                     {/* Live Stats Row */}
                     <div className="grid grid-cols-3 gap-2 mb-4">
                         <div className="glass-panel rounded-lg p-2 text-center">
-                            <div className="text-xs text-cyber-dim">Est. %</div>
+                            <div className="text-xs text-cyber-dim">{t.estPct}</div>
                             <div className="text-xl font-display text-cyber-primary">{Math.round(currentPct)}%</div>
                         </div>
                         <div className="glass-panel rounded-lg p-2 text-center">
-                            <div className="text-xs text-cyber-dim">Cost</div>
+                            <div className="text-xs text-cyber-dim">{t.cost}</div>
                             <div className="text-xl font-display text-cyber-success">&yen;{liveCost}</div>
                         </div>
                         <div className="glass-panel rounded-lg p-2 text-center">
-                            <div className="text-xs text-cyber-dim">Est. Done</div>
+                            <div className="text-xs text-cyber-dim">{t.estDone}</div>
                             <div className="text-sm font-display text-white">{estCompletionTime.getHours().toString().padStart(2,'0')}:{estCompletionTime.getMinutes().toString().padStart(2,'0')}</div>
                         </div>
                     </div>
@@ -908,7 +908,7 @@
                     {/* Session Info */}
                     <div className="bg-white/5 rounded-lg p-2 mb-4 text-xs">
                         <div className="flex justify-between text-cyber-dim">
-                            <span>Start: {formatDate(session.startTime)}</span>
+                            <span>{t.start}: {formatDate(session.startTime)}</span>
                             <span>{session.startBattery}% / {session.startRange}km</span>
                         </div>
                         {session.locationName && (
@@ -920,24 +920,24 @@
 
                     {/* End Inputs (compact) */}
                     <div className="space-y-2">
-                        <DateTimeInput label="End Time" value={endTime} onChange={setEndTime} error={validationErrors.endTime} />
-                        <SmartNumberInput label="Battery (End)" value={endBattery} unit="%" min={0} max={100}
+                        <DateTimeInput label={t.endTime} value={endTime} onChange={setEndTime} error={validationErrors.endTime} />
+                        <SmartNumberInput label={t.battEnd} value={endBattery} unit="%" min={0} max={100}
                             onChange={setEndBattery} error={validationErrors.endBattery} />
-                        <SmartNumberInput label="Range (End)" value={endRange} unit="km" steps={[-10, -1, 1, 10]}
+                        <SmartNumberInput label={t.rangeEnd} value={endRange} unit="km" steps={[-10, -1, 1, 10]}
                             min={0} max={1000} onChange={setEndRange} error={validationErrors.endRange} />
                     </div>
 
                     <button onClick={onComplete} disabled={isSaving}
                         className={`w-full mt-4 py-4 rounded-xl font-display font-bold text-xl tracking-widest uppercase transition-all transform active:scale-95
                             ${isSaving ? 'bg-cyber-primary text-black shadow-[0_0_30px_#00f0ff]' : 'bg-cyber-primary text-black shadow-lg hover:shadow-cyber-primary/50'}`}>
-                        {isSaving ? <span><span className="spinner mr-2"></span>SAVING...</span> : 'COMPLETE & SAVE'}
+                        {isSaving ? <span><span className="spinner mr-2"></span>{t.saving}</span> : t.completeAndSave}
                     </button>
                 </div>
             );
         };
 
         // --- Completion Summary Overlay ---
-        const CompletionSummary = ({ record, settings, onDismiss }) => {
+        const CompletionSummary = ({ record, settings, onDismiss, t }) => {
             const [particles, setParticles] = useState([]);
             useEffect(() => {
                 lucide.createIcons();
@@ -970,7 +970,7 @@
                         ))}
                         <div className="glass-panel rounded-2xl p-6 text-center min-w-[280px] border border-cyber-primary/30">
                             <div className="text-4xl mb-2">{'\u26A1'}</div>
-                            <h2 className="text-2xl font-display text-cyber-primary text-neon mb-4">CHARGE COMPLETE</h2>
+                            <h2 className="text-2xl font-display text-cyber-primary text-neon mb-4">{t.chargeComplete}</h2>
                             <div className="grid grid-cols-3 gap-3 mb-4">
                                 <div>
                                     <div className="text-2xl font-display text-white">{kwh.toFixed(1)}</div>
@@ -978,11 +978,11 @@
                                 </div>
                                 <div>
                                     <div className="text-2xl font-display text-cyber-success">&yen;{cost}</div>
-                                    <div className="text-xs text-cyber-dim">Cost</div>
+                                    <div className="text-xs text-cyber-dim">{t.cost}</div>
                                 </div>
                                 <div>
                                     <div className="text-2xl font-display text-white">{formatDuration(duration)}</div>
-                                    <div className="text-xs text-cyber-dim">Duration</div>
+                                    <div className="text-xs text-cyber-dim">{t.duration}</div>
                                 </div>
                             </div>
                             <div className="text-sm text-cyber-dim">
@@ -995,7 +995,7 @@
         };
 
         // --- Stats Dashboard ---
-        const StatsDashboard = ({ isOpen, onClose, history, settings }) => {
+        const StatsDashboard = ({ isOpen, onClose, history, settings, t }) => {
             const [period, setPeriod] = useState('ALL');
             const canvasBarRef = useRef(null);
             const canvasLineRef = useRef(null);
@@ -1176,7 +1176,7 @@
                     <div className="glass-panel w-full sm:max-w-lg h-[90vh] sm:h-auto sm:max-h-[90vh] rounded-t-2xl sm:rounded-2xl p-4 relative flex flex-col overflow-y-auto cyber-scroll">
                         <div className="flex justify-between items-center mb-4">
                             <h2 className="text-xl font-display text-cyber-primary flex items-center gap-2">
-                                <Icon name="bar-chart-3" /> Statistics
+                                <Icon name="bar-chart-3" /> {t.statistics}
                             </h2>
                             <button onClick={onClose} className="text-cyber-dim hover:text-white"><Icon name="x" /></button>
                         </div>
@@ -1195,48 +1195,48 @@
                         <div className="grid grid-cols-2 gap-2 mb-4">
                             <div className="glass-panel rounded-lg p-3 text-center">
                                 <div className="text-2xl font-display text-white">{stats.count}</div>
-                                <div className="text-xs text-cyber-dim">Total Sessions</div>
+                                <div className="text-xs text-cyber-dim">{t.totalSessions}</div>
                             </div>
                             <div className="glass-panel rounded-lg p-3 text-center">
                                 <div className="text-2xl font-display text-cyber-primary">{stats.totalKwh}</div>
-                                <div className="text-xs text-cyber-dim">Total kWh</div>
+                                <div className="text-xs text-cyber-dim">{t.totalKwh}</div>
                             </div>
                             <div className="glass-panel rounded-lg p-3 text-center">
                                 <div className="text-2xl font-display text-cyber-success">&yen;{stats.totalCost}</div>
-                                <div className="text-xs text-cyber-dim">Total Cost</div>
+                                <div className="text-xs text-cyber-dim">{t.totalCost}</div>
                             </div>
                             <div className="glass-panel rounded-lg p-3 text-center">
                                 <div className="text-2xl font-display text-white">{stats.avgEfficiency}</div>
-                                <div className="text-xs text-cyber-dim">Avg km/kWh</div>
+                                <div className="text-xs text-cyber-dim">{t.avgEfficiency}</div>
                             </div>
                         </div>
 
                         {filteredHistory.length === 0 ? (
-                            <div className="text-center text-cyber-dim py-10">No data for this period.</div>
+                            <div className="text-center text-cyber-dim py-10">{t.noDataPeriod}</div>
                         ) : (
                             <>
                                 {/* Monthly chart */}
                                 <div className="mb-4">
-                                    <h3 className="text-sm font-bold text-cyber-dim mb-2 uppercase">Monthly Charges</h3>
+                                    <h3 className="text-sm font-bold text-cyber-dim mb-2 uppercase">{t.monthlyCharges}</h3>
                                     <div className="glass-panel rounded-lg p-2"><canvas ref={canvasBarRef}></canvas></div>
                                 </div>
 
                                 {/* Efficiency trend */}
                                 <div className="mb-4">
-                                    <h3 className="text-sm font-bold text-cyber-dim mb-2 uppercase">Efficiency Trend (km/kWh)</h3>
+                                    <h3 className="text-sm font-bold text-cyber-dim mb-2 uppercase">{t.efficiencyTrend}</h3>
                                     <div className="glass-panel rounded-lg p-2"><canvas ref={canvasLineRef}></canvas></div>
                                 </div>
 
                                 {/* Location chart */}
                                 <div className="mb-4">
-                                    <h3 className="text-sm font-bold text-cyber-dim mb-2 uppercase">By Location</h3>
+                                    <h3 className="text-sm font-bold text-cyber-dim mb-2 uppercase">{t.byLocation}</h3>
                                     <div className="glass-panel rounded-lg p-2"><canvas ref={canvasLocRef}></canvas></div>
                                 </div>
                             </>
                         )}
 
                         <button onClick={onClose} className="w-full py-3 mt-2 bg-cyber-dark border border-cyber-dim text-cyber-dim font-bold rounded-xl uppercase tracking-widest hover:text-white hover:border-white transition-colors">
-                            Close
+                            {t.close}
                         </button>
                     </div>
                 </div>
@@ -1244,11 +1244,11 @@
         };
 
         // --- CSV Export ---
-        const exportCSV = (history, settings) => {
+        const exportCSV = (history, settings, lang, t) => {
             const capacity = settings.batteryCapacity || DEFAULT_BATTERY_CAPACITY;
             const rate = settings.electricityRate || DEFAULT_ELECTRICITY_RATE;
             const BOM = '\uFEFF';
-            const headers = ['Date','Start Time','End Time','Odometer','Start %','End %','Start Range','End Range','Charged kWh','Cost (JPY)','Duration','Charge Speed (kW)','Efficiency','Location'];
+            const headers = CSV_HEADERS[lang];
             const rows = history.map(h => {
                 const kwh = calcChargedKwh(capacity, h.startBattery || 0, h.endBattery || h.batteryAfter || 0);
                 const cost = calcCost(kwh, rate);
@@ -1279,11 +1279,11 @@
             a.download = `ev-gravity-log-${new Date().toISOString().slice(0,10)}.csv`;
             a.click();
             URL.revokeObjectURL(url);
-            showToast('CSV exported successfully', 'success');
+            showToast(t.toastCsvExported, 'success');
         };
 
         // --- Settings Modal (expanded) ---
-        const SettingsModal = ({ isOpen, onClose, settings, setSettings, locations, setLocations, offlineQueue }) => {
+        const SettingsModal = ({ isOpen, onClose, settings, setSettings, locations, setLocations, offlineQueue, t }) => {
             const [newLoc, setNewLoc] = useState({ name: '', voltage: 200, amperage: 15, kw: 3.0 });
             const [editingLocId, setEditingLocId] = useState(null);
 
@@ -1322,21 +1322,21 @@
                     <div className="glass-panel w-full max-w-md max-h-[90vh] overflow-y-auto rounded-2xl p-6 relative cyber-scroll">
                         <button onClick={onClose} className="absolute top-4 right-4 text-cyber-dim hover:text-white"><Icon name="x" /></button>
                         <h2 className="text-xl font-display text-cyber-primary mb-6 flex items-center gap-2">
-                            <Icon name="settings" /> Settings
+                            <Icon name="settings" /> {t.settings}
                         </h2>
 
                         {/* Vehicle Settings */}
                         <div className="mb-6">
-                            <h3 className="text-sm font-bold text-white mb-3 flex items-center gap-2"><Icon name="car" size={16} /> Vehicle</h3>
+                            <h3 className="text-sm font-bold text-white mb-3 flex items-center gap-2"><Icon name="car" size={16} /> {t.vehicle}</h3>
                             <div className="space-y-3">
                                 <div>
-                                    <label className="text-cyber-dim text-xs block mb-1">Battery Capacity (kWh)</label>
+                                    <label className="text-cyber-dim text-xs block mb-1">{t.batteryCapacity}</label>
                                     <input type="number" value={settings.batteryCapacity || DEFAULT_BATTERY_CAPACITY}
                                         onChange={e => updateSetting('batteryCapacity', Number(e.target.value))}
                                         className="w-full glass-input rounded p-2 text-sm" />
                                 </div>
                                 <div>
-                                    <label className="text-cyber-dim text-xs block mb-1">Electricity Rate (JPY/kWh)</label>
+                                    <label className="text-cyber-dim text-xs block mb-1">{t.electricityRate}</label>
                                     <input type="number" value={settings.electricityRate || DEFAULT_ELECTRICITY_RATE} step="0.01"
                                         onChange={e => updateSetting('electricityRate', Number(e.target.value))}
                                         className="w-full glass-input rounded p-2 text-sm" />
@@ -1345,7 +1345,7 @@
                                     <input type="checkbox" checked={settings.useNightRate || false}
                                         onChange={e => updateSetting('useNightRate', e.target.checked)}
                                         className="w-4 h-4 accent-cyber-primary" />
-                                    <label className="text-cyber-dim text-xs">Night Rate</label>
+                                    <label className="text-cyber-dim text-xs">{t.nightRate}</label>
                                     {settings.useNightRate && (
                                         <input type="number" value={settings.nightRate || DEFAULT_NIGHT_RATE} step="0.01"
                                             onChange={e => updateSetting('nightRate', Number(e.target.value))}
@@ -1357,7 +1357,7 @@
 
                         {/* Charging Locations */}
                         <div className="mb-6">
-                            <h3 className="text-sm font-bold text-white mb-2 flex items-center gap-2"><Icon name="map-pin" size={16} /> Charging Locations</h3>
+                            <h3 className="text-sm font-bold text-white mb-2 flex items-center gap-2"><Icon name="map-pin" size={16} /> {t.chargingLocations}</h3>
                             <div className="space-y-2 mb-4">
                                 {locations.map(loc => (
                                     <div key={loc.id} className={`flex justify-between items-center bg-white/5 p-2 rounded border transition-colors ${editingLocId === loc.id ? 'border-cyber-primary bg-cyber-primary/10' : 'border-white/10'}`}>
@@ -1371,11 +1371,11 @@
                                         </div>
                                     </div>
                                 ))}
-                                {locations.length === 0 && <div className="text-xs text-cyber-dim italic">No locations added.</div>}
+                                {locations.length === 0 && <div className="text-xs text-cyber-dim italic">{t.noLocations}</div>}
                             </div>
 
                             <div className="bg-black/40 p-3 rounded border border-white/10">
-                                <div className="text-xs text-cyber-dim mb-2 uppercase">{editingLocId ? 'Edit Location' : 'Add New Location'}</div>
+                                <div className="text-xs text-cyber-dim mb-2 uppercase">{editingLocId ? t.editLocation : t.addNewLocation}</div>
                                 <input type="text" placeholder="Name (e.g. Home)" value={newLoc.name} onChange={e => setNewLoc({ ...newLoc, name: e.target.value })} className="w-full glass-input rounded p-2 mb-2 text-sm" />
                                 <div className="grid grid-cols-3 gap-2 mb-2">
                                     <input type="number" placeholder="V" value={newLoc.voltage} onChange={e => setNewLoc({ ...newLoc, voltage: Number(e.target.value) })} className="glass-input rounded p-2 text-sm" />
@@ -1383,15 +1383,15 @@
                                     <input type="number" placeholder="kW" value={newLoc.kw} onChange={e => setNewLoc({ ...newLoc, kw: Number(e.target.value) })} className="glass-input rounded p-2 text-sm" />
                                 </div>
                                 <button onClick={handleSaveLocation} className="w-full py-2 bg-cyber-dark text-cyber-primary border border-cyber-primary rounded hover:bg-cyber-primary hover:text-black transition-colors text-sm font-bold uppercase mb-1">
-                                    {editingLocId ? 'Update Location' : 'Add Location'}
+                                    {editingLocId ? t.updateLocation : t.addLocation}
                                 </button>
-                                {editingLocId && <button onClick={cancelEdit} className="w-full py-1 text-xs text-cyber-dim hover:text-white underline">Cancel Edit</button>}
+                                {editingLocId && <button onClick={cancelEdit} className="w-full py-1 text-xs text-cyber-dim hover:text-white underline">{t.cancelEdit}</button>}
                             </div>
                         </div>
 
                         {/* GAS URL */}
                         <div className="mb-6">
-                            <label className="block text-sm text-cyber-dim mb-2">Google Apps Script URL</label>
+                            <label className="block text-sm text-cyber-dim mb-2">{t.gasUrl}</label>
                             <input type="text" value={settings.gasUrl || ''} onChange={(e) => updateSetting('gasUrl', e.target.value)}
                                 placeholder="https://script.google.com/..."
                                 className="w-full bg-cyber-black/50 border border-cyber-glassBorder rounded p-3 text-white focus:border-cyber-primary focus:outline-none text-sm" />
@@ -1401,15 +1401,15 @@
                         {offlineQueue.length > 0 && (
                             <div className="mb-6 bg-yellow-500/10 border border-yellow-500/30 rounded-lg p-3">
                                 <div className="text-yellow-400 text-sm font-bold flex items-center gap-2">
-                                    <Icon name="wifi-off" size={14} /> Offline Queue: {offlineQueue.length} pending
+                                    <Icon name="wifi-off" size={14} /> {t.offlineQueue}: {offlineQueue.length} {t.pendingItems}
                                 </div>
-                                <p className="text-xs text-cyber-dim mt-1">These will auto-send when online.</p>
+                                <p className="text-xs text-cyber-dim mt-1">{t.autoSendOnline}</p>
                             </div>
                         )}
 
                         <div className="flex justify-end">
                             <button onClick={onClose} className="bg-cyber-primary text-black font-bold py-2 px-6 rounded hover:bg-white transition-colors">
-                                Done
+                                {t.done}
                             </button>
                         </div>
                     </div>
@@ -1418,7 +1418,7 @@
         };
 
         // --- History List (improved) ---
-        const HistoryList = ({ isOpen, onClose, history, onDelete, onEdit, onDeleteAll, onDeleteMany, settings, onExportCSV }) => {
+        const HistoryList = ({ isOpen, onClose, history, onDelete, onEdit, onDeleteAll, onDeleteMany, settings, onExportCSV, t }) => {
             const [selectedIds, setSelectedIds] = useState([]);
             const [locationFilter, setLocationFilter] = useState('');
 
@@ -1455,12 +1455,12 @@
                     <div className="glass-panel w-full sm:max-w-md h-[85vh] sm:h-auto sm:max-h-[85vh] rounded-t-2xl sm:rounded-2xl p-6 relative flex flex-col">
                         <div className="flex justify-between items-center mb-2">
                             <h2 className="text-xl font-display text-cyber-primary flex items-center gap-2">
-                                <Icon name="history" /> History
+                                <Icon name="history" /> {t.history}
                             </h2>
                             <div className="flex gap-2 items-center">
                                 {history.length > 0 && (
                                     <button onClick={onExportCSV} className="text-xs text-cyber-primary border border-cyber-primary px-2 py-1 rounded hover:bg-cyber-primary/10 flex items-center gap-1">
-                                        <Icon name="download" size={12} /> CSV
+                                        <Icon name="download" size={12} /> {t.csv}
                                     </button>
                                 )}
                                 {selectedIds.length > 0 ? (
@@ -1469,7 +1469,7 @@
                                     </button>
                                 ) : (
                                     history.length > 0 && (
-                                        <button onClick={onDeleteAll} className="text-xs text-cyber-dim border border-cyber-dim px-2 py-1 rounded hover:bg-white/10">Delete All</button>
+                                        <button onClick={onDeleteAll} className="text-xs text-cyber-dim border border-cyber-dim px-2 py-1 rounded hover:bg-white/10">{t.deleteAll}</button>
                                     )
                                 )}
                                 <button onClick={onClose} className="text-cyber-dim hover:text-white"><Icon name="x" /></button>
@@ -1481,7 +1481,7 @@
                             <div className="mb-2">
                                 <select value={locationFilter} onChange={e => setLocationFilter(e.target.value)}
                                     className="glass-input rounded p-1 text-xs w-full appearance-none">
-                                    <option value="">All Locations</option>
+                                    <option value="">{t.allLocations}</option>
                                     {allLocations.map(loc => <option key={loc} value={loc}>{loc}</option>)}
                                 </select>
                             </div>
@@ -1491,13 +1491,13 @@
                             <div className="flex items-center gap-2 mb-2 px-1">
                                 <input type="checkbox" checked={filteredHistory.length > 0 && selectedIds.length === filteredHistory.length}
                                     onChange={handleSelectAll} className="w-4 h-4 rounded border-cyber-dim bg-transparent accent-cyber-primary cursor-pointer" />
-                                <span className="text-xs text-cyber-dim">Select All ({filteredHistory.length})</span>
+                                <span className="text-xs text-cyber-dim">{t.selectAll} ({filteredHistory.length})</span>
                             </div>
                         )}
 
                         <div className="flex-1 overflow-y-auto cyber-scroll pr-2 space-y-3 pb-4">
                             {filteredHistory.length === 0 ? (
-                                <div className="text-center text-cyber-dim py-10">No records found.</div>
+                                <div className="text-center text-cyber-dim py-10">{t.noRecords}</div>
                             ) : (
                                 filteredHistory.map(item => {
                                     const kwh = calcChargedKwh(capacity, item.startBattery || 0, item.endBattery || item.batteryAfter || 0);
@@ -1519,7 +1519,7 @@
                                                             <span className="text-xs text-cyber-dim">km</span>
                                                         </div>
                                                         <div className="text-sm font-tech text-white mt-1">
-                                                            Batt: {item.battery || item.startBattery}% <Icon name="arrow-right" size={12} className="inline" /> {item.batteryAfter || item.endBattery}%
+                                                            {t.battPct}: {item.battery || item.startBattery}% <Icon name="arrow-right" size={12} className="inline" /> {item.batteryAfter || item.endBattery}%
                                                         </div>
                                                         {/* New: kWh, Cost, Duration, Speed */}
                                                         <div className="flex gap-3 mt-1 text-xs">
@@ -1553,7 +1553,7 @@
                         </div>
 
                         <button onClick={onClose} className="w-full py-3 mt-4 bg-cyber-dark border border-cyber-dim text-cyber-dim font-bold rounded-xl uppercase tracking-widest hover:text-white hover:border-white transition-colors">
-                            Close
+                            {t.close}
                         </button>
                     </div>
                 </div>
@@ -1561,7 +1561,7 @@
         };
 
         // --- Edit Session Modal ---
-        const EditSessionModal = ({ isOpen, onClose, item, onSave }) => {
+        const EditSessionModal = ({ isOpen, onClose, item, onSave, t }) => {
             if (!isOpen || !item) return null;
             const [formData, setFormData] = useState({ ...item });
 
@@ -1578,20 +1578,20 @@
                     <div className="glass-panel w-full max-w-md max-h-[90vh] overflow-y-auto rounded-2xl p-6 relative cyber-scroll">
                         <button onClick={onClose} className="absolute top-4 right-4 text-cyber-dim hover:text-white"><Icon name="x" /></button>
                         <h2 className="text-xl font-display text-cyber-primary mb-6 flex items-center gap-2">
-                            <Icon name="edit-2" /> Edit Session
+                            <Icon name="edit-2" /> {t.editSession}
                         </h2>
 
                         <div className="space-y-4">
                             <div className="mb-3">
-                                <label className="text-cyber-dim text-xs font-tech uppercase mb-1 block">Start</label>
+                                <label className="text-cyber-dim text-xs font-tech uppercase mb-1 block">{t.start}</label>
                                 <input type="datetime-local" value={formData.startTime || formData.timestamp || ''} onChange={(e) => handleChange('startTime', e.target.value)} className="glass-input rounded p-2 text-sm w-full" />
                             </div>
                             <div className="mb-3">
-                                <label className="text-cyber-dim text-xs font-tech uppercase mb-1 block">End</label>
+                                <label className="text-cyber-dim text-xs font-tech uppercase mb-1 block">{t.end}</label>
                                 <input type="datetime-local" value={formData.endTime || ''} onChange={(e) => handleChange('endTime', e.target.value)} className="glass-input rounded p-2 text-sm w-full" />
                             </div>
                             <div className="mb-3">
-                                <label className="text-cyber-dim text-xs font-tech uppercase mb-1 block">Odometer (km)</label>
+                                <label className="text-cyber-dim text-xs font-tech uppercase mb-1 block">{t.odometer}</label>
                                 <div className="flex items-center gap-1 glass-input rounded p-2">
                                     <button onClick={() => handleChange('odometer', Number(formData.odometer || 0) - 100)} className="cyber-btn h-8 w-12 flex items-center justify-center rounded bg-cyber-dark/50 text-cyber-accent text-xs font-bold">-100</button>
                                     <button onClick={() => handleChange('odometer', Number(formData.odometer || 0) - 10)} className="cyber-btn h-8 w-10 flex items-center justify-center rounded bg-cyber-dark/50 text-cyber-accent text-xs font-bold">-10</button>
@@ -1600,20 +1600,20 @@
                                     <button onClick={() => handleChange('odometer', Number(formData.odometer || 0) + 100)} className="cyber-btn h-8 w-12 flex items-center justify-center rounded bg-cyber-dark/50 text-cyber-primary text-xs font-bold">+100</button>
                                 </div>
                             </div>
-                            <SmartNumberInput label="Efficiency" value={Number(formData.efficiency)} unit="km/kWh" steps={[-1, -0.1, 0.1, 1]} min={0} max={20} onChange={(v) => handleChange('efficiency', v)} />
+                            <SmartNumberInput label={t.efficiency} value={Number(formData.efficiency)} unit="km/kWh" steps={[-1, -0.1, 0.1, 1]} min={0} max={20} onChange={(v) => handleChange('efficiency', v)} />
                             <div className="p-3 border border-cyber-glassBorder rounded-lg bg-white/5">
-                                <div className="text-xs text-cyber-dim mb-2 uppercase tracking-widest">Start Conditions</div>
-                                <SmartNumberInput label="Batt %" value={Number(formData.startBattery || formData.battery || 0)} unit="%" onChange={(v) => handleChange('startBattery', v)} />
-                                <SmartNumberInput label="Range" value={Number(formData.startRange || 0)} unit="km" onChange={(v) => handleChange('startRange', v)} />
+                                <div className="text-xs text-cyber-dim mb-2 uppercase tracking-widest">{t.startConditions}</div>
+                                <SmartNumberInput label={t.battPct} value={Number(formData.startBattery || formData.battery || 0)} unit="%" onChange={(v) => handleChange('startBattery', v)} />
+                                <SmartNumberInput label={t.range} value={Number(formData.startRange || 0)} unit="km" onChange={(v) => handleChange('startRange', v)} />
                             </div>
                             <div className="p-3 border border-cyber-glassBorder rounded-lg bg-white/5">
-                                <div className="text-xs text-cyber-dim mb-2 uppercase tracking-widest">End Conditions</div>
-                                <SmartNumberInput label="Batt %" value={Number(formData.endBattery || formData.batteryAfter || 0)} unit="%" onChange={(v) => handleChange('endBattery', v)} />
-                                <SmartNumberInput label="Range" value={Number(formData.endRange || 0)} unit="km" onChange={(v) => handleChange('endRange', v)} />
+                                <div className="text-xs text-cyber-dim mb-2 uppercase tracking-widest">{t.endConditions}</div>
+                                <SmartNumberInput label={t.battPct} value={Number(formData.endBattery || formData.batteryAfter || 0)} unit="%" onChange={(v) => handleChange('endBattery', v)} />
+                                <SmartNumberInput label={t.range} value={Number(formData.endRange || 0)} unit="km" onChange={(v) => handleChange('endRange', v)} />
                             </div>
                             <div className="flex gap-2 mt-4">
-                                <button onClick={onClose} className="flex-1 py-3 bg-cyber-dark border border-cyber-dim text-cyber-dim font-bold rounded-xl uppercase tracking-widest hover:text-white hover:border-white transition-colors">Cancel</button>
-                                <button onClick={handleSave} className="flex-[2] py-3 bg-cyber-primary text-black font-bold rounded-xl uppercase tracking-widest hover:bg-white transition-colors">Save Changes</button>
+                                <button onClick={onClose} className="flex-1 py-3 bg-cyber-dark border border-cyber-dim text-cyber-dim font-bold rounded-xl uppercase tracking-widest hover:text-white hover:border-white transition-colors">{t.cancel}</button>
+                                <button onClick={handleSave} className="flex-[2] py-3 bg-cyber-primary text-black font-bold rounded-xl uppercase tracking-widest hover:bg-white transition-colors">{t.saveChanges}</button>
                             </div>
                         </div>
                     </div>
@@ -1627,6 +1627,8 @@
             const [chargingSession, setChargingSession] = useState(null);
             const [showOnboarding, setShowOnboarding] = useState(false);
             const [completionRecord, setCompletionRecord] = useState(null);
+            const [lang, setLang] = useState(() => localStorage.getItem(STORAGE_KEY_LANG) || 'en');
+            const t = LANG[lang];
 
             // Common inputs
             const [odometer, setOdometer] = useState(10000);
@@ -1734,6 +1736,11 @@
                 lucide.createIcons();
             }, []);
 
+            // Save language preference
+            useEffect(() => {
+                localStorage.setItem(STORAGE_KEY_LANG, lang);
+            }, [lang]);
+
             // Save settings
             useEffect(() => {
                 localStorage.setItem(STORAGE_KEY_SETTINGS, JSON.stringify(settings));
@@ -1770,7 +1777,7 @@
                     }
                     setOfflineQueue(remaining);
                     if (remaining.length < offlineQueue.length) {
-                        showToast(`${offlineQueue.length - remaining.length} queued items sent`, 'success');
+                        showToast(t.toastQueueSent.replace('{n}', offlineQueue.length - remaining.length), 'success');
                     }
                 };
 
@@ -1858,20 +1865,20 @@
                 if (chargingSession) {
                     if (endBattery < chargingSession.startBattery) {
                         errors.endBattery = true;
-                        showToast('End battery must be >= start battery', 'error');
+                        showToast(t.valEndBattery, 'error');
                     }
                     if (endRange < chargingSession.startRange) {
                         errors.endRange = true;
-                        showToast('End range must be >= start range', 'error');
+                        showToast(t.valEndRange, 'error');
                     }
                     if (new Date(endTime) <= new Date(chargingSession.startTime)) {
                         errors.endTime = true;
-                        showToast('End time must be after start time', 'error');
+                        showToast(t.valEndTime, 'error');
                     }
                     const durationHours = (new Date(endTime) - new Date(chargingSession.startTime)) / 3600000;
                     if (durationHours > MAX_CHARGE_HOURS) {
                         errors.endTime = true;
-                        showToast(`Charge duration exceeds ${MAX_CHARGE_HOURS}h`, 'error');
+                        showToast(t.valDuration.replace('{n}', MAX_CHARGE_HOURS), 'error');
                     }
                 }
                 setValidationErrors(errors);
@@ -1969,22 +1976,22 @@
                             headers: { 'Content-Type': 'application/json' },
                             body: JSON.stringify(payload)
                         });
-                        showToast('Data saved & sent to Google Sheets', 'success');
+                        showToast(t.toastSavedSent, 'success');
                     } catch (e) {
                         console.error("GAS Error", e);
                         // Queue for offline retry
                         setOfflineQueue(prev => [...prev, payload]);
-                        showToast('Saved locally. Queued for sync when online.', 'info');
+                        showToast(t.toastSavedQueued, 'info');
                     }
                 } else {
-                    showToast('Charge session saved', 'success');
+                    showToast(t.toastSessionSaved, 'success');
                 }
 
                 setTimeout(() => setIsSaving(false), 500);
             };
 
             const handleDelete = (id) => {
-                if (confirm("Are you sure you want to delete this record?")) {
+                if (confirm(t.confirmDelete)) {
                     const newHistory = history.filter(item => item.id !== id);
                     setHistory(newHistory);
                     localStorage.setItem(STORAGE_KEY_DATA, JSON.stringify(newHistory));
@@ -1992,14 +1999,14 @@
             };
 
             const handleDeleteAll = () => {
-                if (confirm("DANGER: Delete ALL history records? This cannot be undone.")) {
+                if (confirm(t.confirmDeleteAll)) {
                     setHistory([]);
                     localStorage.removeItem(STORAGE_KEY_DATA);
                 }
             };
 
             const handleDeleteMany = (ids) => {
-                if (confirm(`Delete ${ids.length} selected records?`)) {
+                if (confirm(t.confirmDeleteN.replace('{n}', ids.length))) {
                     const newHistory = history.filter(item => !ids.includes(item.id));
                     setHistory(newHistory);
                     localStorage.setItem(STORAGE_KEY_DATA, JSON.stringify(newHistory));
@@ -2014,7 +2021,7 @@
             };
 
             const handleCancelSession = () => {
-                if (confirm("Cancel current charging session?")) {
+                if (confirm(t.confirmCancelSession)) {
                     setChargingSession(null);
                     localStorage.removeItem(STORAGE_KEY_SESSION);
                     setValidationErrors({});
@@ -2031,7 +2038,7 @@
                     useNightRate: vehicleSettings.useNightRate,
                     gasUrl: vehicleSettings.gasUrl,
                 }));
-                showToast('Welcome! Settings saved.', 'success');
+                showToast(t.toastWelcome, 'success');
             };
 
             return (
@@ -2045,7 +2052,13 @@
                             <h1 className="text-2xl font-display text-white italic tracking-tighter drop-shadow-lg">
                                 EV<span className="text-cyber-primary">GRAVITY</span>
                             </h1>
-                            <div className="flex gap-2">
+                            <div className="flex gap-2 items-center">
+                                <button onClick={() => setLang(lang === 'en' ? 'ja' : 'en')}
+                                    className="glass-panel rounded-full px-2 py-1 text-xs font-bold font-tech flex items-center gap-0.5 hover:bg-white/10 transition">
+                                    <span className={lang === 'en' ? 'text-cyber-primary' : 'text-cyber-dim'}>EN</span>
+                                    <span className="text-cyber-dim">/</span>
+                                    <span className={lang === 'ja' ? 'text-cyber-primary' : 'text-cyber-dim'}>JP</span>
+                                </button>
                                 <button onClick={() => setShowStats(true)} className="glass-panel p-2 rounded-full text-cyber-primary hover:bg-white/10 transition">
                                     <Icon name="bar-chart-3" />
                                 </button>
@@ -2066,28 +2079,28 @@
                                 <div className="glass-panel rounded-2xl p-4 border-t border-cyber-glassBorder backdrop-blur-xl bg-black/40 shadow-2xl">
                                     <div className="flex items-center gap-2 mb-1 text-cyber-primary">
                                         <Icon name="plug-zap" />
-                                        <h2 className="text-lg font-display">START CHARGING</h2>
+                                        <h2 className="text-lg font-display">{t.startCharging}</h2>
                                     </div>
 
-                                    <DateTimeInput label="Start Time" value={startTime} onChange={setStartTime} />
-                                    <Odometer value={odometer} onChange={setOdometer} />
+                                    <DateTimeInput label={t.startTime} value={startTime} onChange={setStartTime} />
+                                    <Odometer value={odometer} onChange={setOdometer} t={t} />
 
                                     <div className="flex flex-col gap-2">
-                                        <SmartNumberInput label="Battery (%)" value={startBattery} unit="%" min={0} max={100} onChange={setStartBattery} />
-                                        <SmartNumberInput label="Range (km)" value={startRange} unit="km" steps={[-10, -1, 1, 10]} min={0} max={1000} onChange={setStartRange} />
+                                        <SmartNumberInput label={t.batteryPct} value={startBattery} unit="%" min={0} max={100} onChange={setStartBattery} />
+                                        <SmartNumberInput label={t.rangeKm} value={startRange} unit="km" steps={[-10, -1, 1, 10]} min={0} max={1000} onChange={setStartRange} />
                                     </div>
 
-                                    <SmartNumberInput label="Efficiency (km/kWh)" value={efficiency} unit="" steps={[-1, -0.1, 0.1, 1]} min={0} max={20} onChange={setEfficiency} />
+                                    <SmartNumberInput label={t.efficiency} value={efficiency} unit="" steps={[-1, -0.1, 0.1, 1]} min={0} max={20} onChange={setEfficiency} />
 
                                     {/* Location Selector */}
                                     <div className="mb-2">
                                         <label className="text-cyber-dim text-xs font-tech uppercase tracking-wider pl-1 font-bold flex items-center gap-2">
-                                            <Icon name="map-pin" size={12} /> Charging Location
+                                            <Icon name="map-pin" size={12} /> {t.chargingLocation}
                                         </label>
                                         <div className="relative">
                                             <select value={selectedLocationId} onChange={(e) => setSelectedLocationId(e.target.value)}
                                                 className="w-full glass-input rounded-lg p-3 text-cyber-primary appearance-none focus:outline-none bg-black/50">
-                                                <option value="">-- Manual / Unspecified --</option>
+                                                <option value="">{t.manualUnspecified}</option>
                                                 {locations.map(loc => (
                                                     <option key={loc.id} value={loc.id}>{loc.name} ({loc.kw}kW)</option>
                                                 ))}
@@ -2100,7 +2113,7 @@
 
                                     <button onClick={handleStartCharging}
                                         className="w-full mt-4 py-4 rounded-xl font-display font-bold text-xl tracking-widest uppercase bg-gradient-to-r from-cyber-secondary to-cyber-accent text-white shadow-lg hover:shadow-cyber-accent/50 transition-all transform active:scale-95">
-                                        START CHARGING
+                                        {t.startCharging}
                                     </button>
                                 </div>
                             )}
@@ -2120,6 +2133,7 @@
                                     onCancel={handleCancelSession}
                                     isSaving={isSaving}
                                     validationErrors={validationErrors}
+                                    t={t}
                                 />
                             )}
                         </main>
@@ -2134,6 +2148,7 @@
                         locations={locations}
                         setLocations={setLocations}
                         offlineQueue={offlineQueue}
+                        t={t}
                     />
 
                     <HistoryList
@@ -2145,7 +2160,8 @@
                         onDeleteMany={handleDeleteMany}
                         onEdit={setEditingItem}
                         settings={settings}
-                        onExportCSV={() => exportCSV(history, settings)}
+                        onExportCSV={() => exportCSV(history, settings, lang, t)}
+                        t={t}
                     />
 
                     <EditSessionModal
@@ -2153,6 +2169,7 @@
                         onClose={() => setEditingItem(null)}
                         item={editingItem}
                         onSave={handleUpdateSession}
+                        t={t}
                     />
 
                     <StatsDashboard
@@ -2160,6 +2177,7 @@
                         onClose={() => setShowStats(false)}
                         history={history}
                         settings={settings}
+                        t={t}
                     />
 
                     {/* Completion Summary Overlay */}
@@ -2168,6 +2186,7 @@
                             record={completionRecord}
                             settings={settings}
                             onDismiss={() => setCompletionRecord(null)}
+                            t={t}
                         />
                     )}
 
@@ -2176,6 +2195,7 @@
                         <Onboarding
                             onComplete={handleOnboardingComplete}
                             setVehicleSettings={() => {}}
+                            t={t}
                         />
                     )}
 
@@ -2183,13 +2203,13 @@
                     {updateAvailable && (
                         <div className="fixed top-0 left-0 right-0 z-[110] flex items-center justify-center p-2 pointer-events-auto">
                             <div className="glass-panel rounded-lg px-4 py-2 flex items-center gap-3 border border-cyber-primary/30 shadow-[0_0_20px_rgba(0,240,255,0.15)]">
-                                <span className="text-cyber-primary text-sm font-tech">New version available</span>
+                                <span className="text-cyber-primary text-sm font-tech">{t.newVersionAvail}</span>
                                 <button onClick={() => window.location.reload()}
                                     className="bg-cyber-primary text-black text-xs font-bold px-3 py-1 rounded hover:bg-white transition-colors">
-                                    UPDATE
+                                    {t.update}
                                 </button>
                                 <button onClick={() => setUpdateAvailable(false)} className="text-cyber-dim hover:text-white text-xs">
-                                    Later
+                                    {t.later}
                                 </button>
                             </div>
                         </div>
