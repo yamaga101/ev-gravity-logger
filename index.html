@@ -8,6 +8,11 @@
     <title>EV Gravity Logger</title>
     <link rel="apple-touch-icon" href="icon.png">
     <link rel="icon" href="icon.png">
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#00f0ff">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 
     <!-- Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -1327,6 +1332,11 @@
 
         // Lucide icons re-init for dynamic content if needed, mostly handled in component
     </script>
+<script>
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('sw.js');
+}
+</script>
 </body>
 
 </html>
