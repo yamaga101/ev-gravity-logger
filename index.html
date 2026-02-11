@@ -1463,6 +1463,22 @@
             const [editingItem, setEditingItem] = useState(null);
             const [isSaving, setIsSaving] = useState(false);
             const [validationErrors, setValidationErrors] = useState({});
+            const [updateAvailable, setUpdateAvailable] = useState(false);
+
+            // Listen for SW update events
+            useEffect(() => {
+                const onReady = () => setUpdateAvailable(true);
+                const onUpdated = (e) => {
+                    showToast(`v${e.detail} available. Reload to update.`, 'info', 5000);
+                    setUpdateAvailable(true);
+                };
+                window.addEventListener('sw-update-ready', onReady);
+                window.addEventListener('sw-updated', onUpdated);
+                return () => {
+                    window.removeEventListener('sw-update-ready', onReady);
+                    window.removeEventListener('sw-updated', onUpdated);
+                };
+            }, []);
 
             // Load from LocalStorage on mount
             useEffect(() => {
@@ -1965,6 +1981,22 @@
                         />
                     )}
 
+                    {/* Update Banner */}
+                    {updateAvailable && (
+                        <div className="fixed top-0 left-0 right-0 z-[110] flex items-center justify-center p-2 pointer-events-auto">
+                            <div className="glass-panel rounded-lg px-4 py-2 flex items-center gap-3 border border-cyber-primary/30 shadow-[0_0_20px_rgba(0,240,255,0.15)]">
+                                <span className="text-cyber-primary text-sm font-tech">New version available</span>
+                                <button onClick={() => window.location.reload()}
+                                    className="bg-cyber-primary text-black text-xs font-bold px-3 py-1 rounded hover:bg-white transition-colors">
+                                    UPDATE
+                                </button>
+                                <button onClick={() => setUpdateAvailable(false)} className="text-cyber-dim hover:text-white text-xs">
+                                    Later
+                                </button>
+                            </div>
+                        </div>
+                    )}
+
                     {/* Toast Container */}
                     <ToastContainer />
                 </>
@@ -1976,7 +2008,31 @@
     </script>
 <script>
 if ('serviceWorker' in navigator) {
-  navigator.serviceWorker.register('sw.js');
+  navigator.serviceWorker.register('sw.js').then(function(reg) {
+    // Check for updates periodically
+    setInterval(function() { reg.update(); }, 60 * 60 * 1000);
+
+    // Detect waiting SW (new version ready)
+    function onNewSW() {
+      window.dispatchEvent(new CustomEvent('sw-update-ready'));
+    }
+    if (reg.waiting) { onNewSW(); }
+    reg.addEventListener('updatefound', function() {
+      var newWorker = reg.installing;
+      newWorker.addEventListener('statechange', function() {
+        if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+          onNewSW();
+        }
+      });
+    });
+  });
+
+  // Listen for SW_UPDATED message (post-activate notification)
+  navigator.serviceWorker.addEventListener('message', function(event) {
+    if (event.data && event.data.type === 'SW_UPDATED') {
+      window.dispatchEvent(new CustomEvent('sw-updated', { detail: event.data.version }));
+    }
+  });
 }
 </script>
 </body>
