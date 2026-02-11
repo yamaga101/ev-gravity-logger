@@ -1,4 +1,4 @@
-var APP_VERSION = '2.1.0';
+var APP_VERSION = '2.2.0';
 var CACHE_NAME = 'ev-gravity-logger-v' + APP_VERSION;
 var ASSETS = [
   './',
