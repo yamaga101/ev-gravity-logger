@@ -1172,7 +1172,7 @@
                             <h2 className="text-xl font-display text-cyber-primary flex items-center gap-2">
                                 <Icon name="bar-chart-3" /> {t.statistics}
                             </h2>
-                            <button onClick={onClose} className="text-cyber-dim hover:text-white"><Icon name="x" /></button>
+                            <button onClick={onClose} title={t.close} className="text-cyber-dim hover:text-white"><Icon name="x" /></button>
                         </div>
 
                         {/* Period filter */}
@@ -1360,8 +1360,8 @@
                                             <div className="text-xs text-cyber-dim">{loc.voltage}V / {loc.amperage}A / {loc.kw}kW</div>
                                         </div>
                                         <div className="flex gap-2">
-                                            <button onClick={() => startEdit(loc)} className="text-cyber-dim hover:text-white"><Icon name="edit-2" size={16} /></button>
-                                            <button onClick={() => removeLocation(loc.id)} className="text-cyber-accent hover:text-white"><Icon name="trash-2" size={16} /></button>
+                                            <button onClick={() => startEdit(loc)} title={t.editLocation} className="text-cyber-dim hover:text-white"><Icon name="edit-2" size={16} /></button>
+                                            <button onClick={() => removeLocation(loc.id)} title={t.delete} className="text-cyber-accent hover:text-white"><Icon name="trash-2" size={16} /></button>
                                         </div>
                                     </div>
                                 ))}
@@ -1466,7 +1466,7 @@
                                         <button onClick={onDeleteAll} className="text-xs text-cyber-dim border border-cyber-dim px-2 py-1 rounded hover:bg-white/10">{t.deleteAll}</button>
                                     )
                                 )}
-                                <button onClick={onClose} className="text-cyber-dim hover:text-white"><Icon name="x" /></button>
+                                <button onClick={onClose} title={t.close} className="text-cyber-dim hover:text-white"><Icon name="x" /></button>
                             </div>
                         </div>
 
