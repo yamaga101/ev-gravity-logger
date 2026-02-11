@@ -637,18 +637,26 @@
             return (
                 <div className="flex flex-col gap-1 mb-2">
                     <label className="text-cyber-dim text-xs font-tech uppercase tracking-wider pl-1">{label}</label>
-                    <div className={`flex items-center glass-input rounded-lg p-1 focus-within:border-cyber-primary focus-within:shadow-[0_0_15px_rgba(0,240,255,0.2)] ${error ? 'input-error shake' : ''}`}
+                    <div className={`flex items-center justify-between glass-input rounded-lg p-1 focus-within:border-cyber-primary focus-within:shadow-[0_0_15px_rgba(0,240,255,0.2)] ${error ? 'input-error shake' : ''}`}
                         tabIndex="0" onKeyDown={handleKeyDown}>
-                        <div className="flex items-baseline gap-1 min-w-[80px] justify-center">
+                        <div className="flex gap-1">
+                            {steps.filter(s => s < 0).map(step => (
+                                <RepeaterButton key={step} onClick={() => adjust(step)}
+                                    className="cyber-btn h-10 w-10 flex items-center justify-center rounded bg-cyber-dark/50 text-cyber-accent font-bold hover:bg-cyber-accent/20 transition-colors">
+                                    {step}
+                                </RepeaterButton>
+                            ))}
+                        </div>
+                        <div className="flex items-baseline gap-1 flex-1 justify-center">
                             <input type="number" value={value} onChange={(e) => onChange(parseFloat(e.target.value))}
-                                className="w-16 bg-transparent text-2xl font-display text-cyber-primary text-center focus:outline-none appearance-none p-0" />
+                                className="w-20 bg-transparent text-2xl font-display text-cyber-primary text-center focus:outline-none appearance-none p-0" />
                             <span className="text-xs text-cyber-dim font-tech">{unit}</span>
                         </div>
-                        <div className="flex gap-1 ml-auto">
-                            {steps.map(step => (
+                        <div className="flex gap-1">
+                            {steps.filter(s => s > 0).reverse().map(step => (
                                 <RepeaterButton key={step} onClick={() => adjust(step)}
-                                    className={`cyber-btn h-10 w-10 flex items-center justify-center rounded bg-cyber-dark/50 font-bold transition-colors ${step < 0 ? 'text-cyber-accent hover:bg-cyber-accent/20' : 'text-cyber-primary hover:bg-cyber-primary/20'}`}>
-                                    {step > 0 ? `+${step}` : step}
+                                    className="cyber-btn h-10 w-10 flex items-center justify-center rounded bg-cyber-dark/50 text-cyber-primary font-bold hover:bg-cyber-primary/20 transition-colors">
+                                    +{step}
                                 </RepeaterButton>
                             ))}
                         </div>
