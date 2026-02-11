@@ -225,6 +225,7 @@
                 estDone: 'Est. Done',
                 duration: 'Duration',
                 cancel: 'Cancel',
+                delete: 'Delete',
                 close: 'Close',
                 settings: 'Settings',
                 vehicle: 'Vehicle',
@@ -319,6 +320,7 @@
                 estDone: '完了予定',
                 duration: '所要時間',
                 cancel: 'キャンセル',
+                delete: '削除',
                 close: '閉じる',
                 settings: '設定',
                 vehicle: '車両',
@@ -635,26 +637,18 @@
             return (
                 <div className="flex flex-col gap-1 mb-2">
                     <label className="text-cyber-dim text-xs font-tech uppercase tracking-wider pl-1">{label}</label>
-                    <div className={`flex items-center justify-between glass-input rounded-lg p-1 focus-within:border-cyber-primary focus-within:shadow-[0_0_15px_rgba(0,240,255,0.2)] ${error ? 'input-error shake' : ''}`}
+                    <div className={`flex items-center glass-input rounded-lg p-1 focus-within:border-cyber-primary focus-within:shadow-[0_0_15px_rgba(0,240,255,0.2)] ${error ? 'input-error shake' : ''}`}
                         tabIndex="0" onKeyDown={handleKeyDown}>
-                        <div className="flex gap-1">
-                            {steps.filter(s => s < 0).map(step => (
-                                <RepeaterButton key={step} onClick={() => adjust(step)}
-                                    className="cyber-btn h-10 w-10 flex items-center justify-center rounded bg-cyber-dark/50 text-cyber-accent font-bold hover:bg-cyber-accent/20 transition-colors">
-                                    {step}
-                                </RepeaterButton>
-                            ))}
-                        </div>
-                        <div className="flex items-baseline gap-1 flex-1 justify-center">
+                        <div className="flex items-baseline gap-1 min-w-[80px] justify-center">
                             <input type="number" value={value} onChange={(e) => onChange(parseFloat(e.target.value))}
-                                className="w-20 bg-transparent text-2xl font-display text-cyber-primary text-center focus:outline-none appearance-none p-0" />
+                                className="w-16 bg-transparent text-2xl font-display text-cyber-primary text-center focus:outline-none appearance-none p-0" />
                             <span className="text-xs text-cyber-dim font-tech">{unit}</span>
                         </div>
-                        <div className="flex gap-1">
-                            {steps.filter(s => s > 0).map(step => (
+                        <div className="flex gap-1 ml-auto">
+                            {steps.map(step => (
                                 <RepeaterButton key={step} onClick={() => adjust(step)}
-                                    className="cyber-btn h-10 w-10 flex items-center justify-center rounded bg-cyber-dark/50 text-cyber-primary font-bold hover:bg-cyber-primary/20 transition-colors">
-                                    +{step}
+                                    className={`cyber-btn h-10 w-10 flex items-center justify-center rounded bg-cyber-dark/50 font-bold transition-colors ${step < 0 ? 'text-cyber-accent hover:bg-cyber-accent/20' : 'text-cyber-primary hover:bg-cyber-primary/20'}`}>
+                                    {step > 0 ? `+${step}` : step}
                                 </RepeaterButton>
                             ))}
                         </div>
@@ -1538,10 +1532,10 @@
                                                     </div>
                                                 </div>
                                                 <div className="flex gap-2 flex-shrink-0">
-                                                    <button onClick={() => onEdit(item)} className="h-10 w-10 flex items-center justify-center bg-cyber-primary text-black rounded font-bold hover:bg-white transition-colors shadow-[0_0_10px_rgba(0,240,255,0.3)]">
+                                                    <button onClick={() => onEdit(item)} title={t.editSession} className="h-10 w-10 flex items-center justify-center bg-cyber-primary text-black rounded font-bold hover:bg-white transition-colors shadow-[0_0_10px_rgba(0,240,255,0.3)]">
                                                         <Icon name="edit-2" size={18} />
                                                     </button>
-                                                    <button onClick={() => onDelete(item.id)} className="h-10 w-10 flex items-center justify-center bg-cyber-dark border border-cyber-accent text-cyber-accent rounded hover:bg-cyber-accent hover:text-white transition-colors">
+                                                    <button onClick={() => onDelete(item.id)} title={t.delete} className="h-10 w-10 flex items-center justify-center bg-cyber-dark border border-cyber-accent text-cyber-accent rounded hover:bg-cyber-accent hover:text-white transition-colors">
                                                         <Icon name="trash-2" size={18} />
                                                     </button>
                                                 </div>
@@ -2054,18 +2048,19 @@
                             </h1>
                             <div className="flex gap-2 items-center">
                                 <button onClick={() => setLang(lang === 'en' ? 'ja' : 'en')}
+                                    title="Language / 言語"
                                     className="glass-panel rounded-full px-2 py-1 text-xs font-bold font-tech flex items-center gap-0.5 hover:bg-white/10 transition">
                                     <span className={lang === 'en' ? 'text-cyber-primary' : 'text-cyber-dim'}>EN</span>
                                     <span className="text-cyber-dim">/</span>
                                     <span className={lang === 'ja' ? 'text-cyber-primary' : 'text-cyber-dim'}>JP</span>
                                 </button>
-                                <button onClick={() => setShowStats(true)} className="glass-panel p-2 rounded-full text-cyber-primary hover:bg-white/10 transition">
+                                <button onClick={() => setShowStats(true)} title={t.statistics} className="glass-panel p-2 rounded-full text-cyber-primary hover:bg-white/10 transition">
                                     <Icon name="bar-chart-3" />
                                 </button>
-                                <button onClick={() => setShowHistory(true)} className="glass-panel p-2 rounded-full text-cyber-primary hover:bg-white/10 transition">
+                                <button onClick={() => setShowHistory(true)} title={t.history} className="glass-panel p-2 rounded-full text-cyber-primary hover:bg-white/10 transition">
                                     <Icon name="history" />
                                 </button>
-                                <button onClick={() => setShowSettings(true)} className="glass-panel p-2 rounded-full text-cyber-primary hover:bg-white/10 transition">
+                                <button onClick={() => setShowSettings(true)} title={t.settings} className="glass-panel p-2 rounded-full text-cyber-primary hover:bg-white/10 transition">
                                     <Icon name="settings" />
                                 </button>
                             </div>
