@@ -1,7 +1,8 @@
 {
   "name": "EV Gravity Logger",
   "short_name": "EV Logger",
-  "description": "EV charging session logger",
+  "version": "2.0.0",
+  "description": "EV charging session logger with stats dashboard, live charging, CSV export & onboarding",
   "start_url": "/ev-gravity-logger/",
   "scope": "/ev-gravity-logger/",
   "display": "standalone",

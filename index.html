@@ -40,7 +40,8 @@
                             glass: 'rgba(255, 255, 255, 0.05)',
                             glassBorder: 'rgba(255, 255, 255, 0.1)',
                             text: '#e0e0e0',
-                            dim: '#8888aa'
+                            dim: '#8888aa',
+                            success: '#00ff88',
                         }
                     },
                     fontFamily: {
@@ -74,25 +75,13 @@
             background-color: #0a0a0f;
             font-family: 'Noto Sans JP', sans-serif;
             touch-action: none;
-            /* Prevent browser zooming/panning */
             -webkit-tap-highlight-color: transparent;
         }
 
-        /* Custom scrollbar for lists */
-        .cyber-scroll::-webkit-scrollbar {
-            width: 4px;
-        }
+        .cyber-scroll::-webkit-scrollbar { width: 4px; }
+        .cyber-scroll::-webkit-scrollbar-track { background: rgba(0, 0, 0, 0.3); }
+        .cyber-scroll::-webkit-scrollbar-thumb { background: #00f0ff; border-radius: 2px; }
 
-        .cyber-scroll::-webkit-scrollbar-track {
-            background: rgba(0, 0, 0, 0.3);
-        }
-
-        .cyber-scroll::-webkit-scrollbar-thumb {
-            background: #00f0ff;
-            border-radius: 2px;
-        }
-
-        /* Glassmorphism Classes */
         .glass-panel {
             background: rgba(19, 19, 31, 0.6);
             backdrop-filter: blur(12px);
@@ -115,7 +104,6 @@
             outline: none;
         }
 
-        /* Neon Text */
         .text-neon {
             text-shadow: 0 0 5px rgba(0, 240, 255, 0.7), 0 0 10px rgba(0, 240, 255, 0.5);
         }
@@ -124,26 +112,79 @@
             text-shadow: 0 0 5px rgba(255, 0, 60, 0.7), 0 0 10px rgba(255, 0, 60, 0.5);
         }
 
-        /* Odometer Animation */
         .odometer-digit {
             transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
         }
 
-        /* Button Press Effect */
-        .cyber-btn:active {
-            transform: scale(0.95);
+        .cyber-btn:active { transform: scale(0.95); }
+        .no-select { user-select: none; -webkit-user-select: none; }
+        .h-dvh { height: 100vh; height: 100dvh; }
+
+        /* Toast Animations */
+        @keyframes toast-in {
+            from { transform: translateY(100px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+        @keyframes toast-out {
+            from { transform: translateY(0); opacity: 1; }
+            to { transform: translateY(100px); opacity: 0; }
+        }
+        .toast-enter { animation: toast-in 0.3s ease-out forwards; }
+        .toast-exit { animation: toast-out 0.3s ease-in forwards; }
+
+        /* Shake Animation for validation */
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            20%, 60% { transform: translateX(-6px); }
+            40%, 80% { transform: translateX(6px); }
+        }
+        .shake { animation: shake 0.4s ease-in-out; }
+
+        /* Validation error border */
+        .input-error { border-color: #ff003c !important; box-shadow: 0 0 10px rgba(255,0,60,0.3) !important; }
+
+        /* Pulse glow for live charging */
+        @keyframes pulse-glow {
+            0%, 100% { box-shadow: 0 0 20px rgba(0,240,255,0.2); }
+            50% { box-shadow: 0 0 40px rgba(0,240,255,0.5), 0 0 60px rgba(0,240,255,0.2); }
+        }
+        .pulse-glow { animation: pulse-glow 2s ease-in-out infinite; }
+
+        /* Progress ring animation */
+        .progress-ring-circle {
+            transition: stroke-dashoffset 0.5s ease;
+            transform: rotate(-90deg);
+            transform-origin: 50% 50%;
         }
 
-        .no-select {
-            user-select: none;
-            -webkit-user-select: none;
+        /* Particle burst */
+        @keyframes particle-burst {
+            0% { transform: translate(0,0) scale(1); opacity: 1; }
+            100% { transform: translate(var(--px), var(--py)) scale(0); opacity: 0; }
+        }
+        .particle {
+            position: absolute;
+            width: 6px; height: 6px;
+            border-radius: 50%;
+            animation: particle-burst 1s ease-out forwards;
         }
 
-        /* Mobile Viewport Fix */
-        .h-dvh {
-            height: 100vh;
-            /* Fallback */
-            height: 100dvh;
+        /* Onboarding slide */
+        @keyframes slide-in-right {
+            from { transform: translateX(100%); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+        }
+        .slide-in { animation: slide-in-right 0.3s ease-out forwards; }
+
+        /* Spinner */
+        @keyframes spin { to { transform: rotate(360deg); } }
+        .spinner {
+            width: 16px; height: 16px;
+            border: 2px solid transparent;
+            border-top-color: currentColor;
+            border-radius: 50%;
+            animation: spin 0.6s linear infinite;
+            display: inline-block;
         }
     </style>
 </head>
@@ -158,15 +199,21 @@
         const STORAGE_KEY_SETTINGS = "ev_gravity_settings_v1";
         const STORAGE_KEY_SESSION = "ev_gravity_session_v1";
         const STORAGE_KEY_LOCATIONS = "ev_gravity_locations_v1";
+        const STORAGE_KEY_QUEUE = "ev_gravity_queue_v1";
+        const STORAGE_KEY_ONBOARDING = "ev_gravity_onboarding_done";
+
+        // Vehicle defaults (AZE0 Leaf 30kWh)
+        const DEFAULT_BATTERY_CAPACITY = 30;
+        const DEFAULT_ELECTRICITY_RATE = 31;
+        const DEFAULT_NIGHT_RATE = 17.78;
+        const MAX_CHARGE_HOURS = 24;
 
         // --- Utils ---
         const generateId = () => Math.random().toString(36).substr(2, 9);
         const getTimestamp = () => new Date().toISOString();
-        // Format for datetime-local input (YYYY-MM-DDThh:mm)
         const getLocalISOString = (date = new Date()) => {
             const offset = date.getTimezoneOffset() * 60000;
-            const localISOTime = (new Date(date - offset)).toISOString().slice(0, 16);
-            return localISOTime;
+            return (new Date(date - offset)).toISOString().slice(0, 16);
         };
         const formatDate = (isoString) => {
             const d = new Date(isoString);
@@ -175,6 +222,31 @@
         const getRandomColor = () => {
             const colors = ['#00f0ff', '#7000df', '#ff003c', '#e0e0e0', '#0a0a0f'];
             return colors[Math.floor(Math.random() * colors.length)];
+        };
+
+        // Charging calculations
+        const calcChargedKwh = (capacity, startPct, endPct) => capacity * (endPct - startPct) / 100;
+        const calcCost = (kwh, rate) => Math.round(kwh * rate);
+        const calcDurationMinutes = (startIso, endIso) => {
+            const ms = new Date(endIso).getTime() - new Date(startIso).getTime();
+            return Math.max(0, ms / 60000);
+        };
+        const calcChargeSpeed = (kwh, durationMin) => durationMin > 0 ? kwh / (durationMin / 60) : 0;
+        const formatDuration = (minutes) => {
+            const h = Math.floor(minutes / 60);
+            const m = Math.floor(minutes % 60);
+            return h > 0 ? `${h}h${m.toString().padStart(2, '0')}m` : `${m}m`;
+        };
+        const formatTimer = (seconds) => {
+            const h = Math.floor(seconds / 3600);
+            const m = Math.floor((seconds % 3600) / 60);
+            const s = Math.floor(seconds % 60);
+            return `${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
+        };
+        const getChargeSpeedBadge = (kw) => {
+            if (kw > 20) return { emoji: '\u{1F534}', label: 'Rapid', color: '#ff003c' };
+            if (kw >= 3) return { emoji: '\u{1F7E1}', label: 'Normal', color: '#ffaa00' };
+            return { emoji: '\u{1F7E2}', label: 'Slow', color: '#00ff88' };
         };
 
         const { useState, useEffect, useRef, useMemo, useCallback } = React;
@@ -187,51 +259,78 @@
             const isRunningRef = useRef(false);
             const callbackRef = useRef(callback);
 
-            // Keep callback ref updated
-            useEffect(() => {
-                callbackRef.current = callback;
-            }, [callback]);
+            useEffect(() => { callbackRef.current = callback; }, [callback]);
 
             const stop = useCallback(() => {
                 isRunningRef.current = false;
-                if (timeoutIdRef.current) {
-                    clearTimeout(timeoutIdRef.current);
-                    timeoutIdRef.current = null;
-                }
-                if (intervalIdRef.current) {
-                    clearInterval(intervalIdRef.current);
-                    intervalIdRef.current = null;
-                }
+                if (timeoutIdRef.current) { clearTimeout(timeoutIdRef.current); timeoutIdRef.current = null; }
+                if (intervalIdRef.current) { clearInterval(intervalIdRef.current); intervalIdRef.current = null; }
             }, []);
 
             const start = useCallback(() => {
                 if (isRunningRef.current) return;
-
                 stop();
                 isRunningRef.current = true;
-
-                // Execute immediately
                 callbackRef.current();
-
-                // Set up delayed repeat
                 timeoutIdRef.current = setTimeout(() => {
                     if (!isRunningRef.current) return;
-
                     intervalIdRef.current = setInterval(() => {
-                        if (isRunningRef.current) {
-                            callbackRef.current();
-                        } else {
-                            stop();
-                        }
+                        if (isRunningRef.current) callbackRef.current(); else stop();
                     }, interval);
                 }, delay);
             }, [delay, interval, stop]);
 
-            useEffect(() => {
-                return stop;
-            }, [stop]);
-
+            useEffect(() => stop, [stop]);
             return { start, stop };
+        };
+
+        // --- Toast System ---
+        let toastIdCounter = 0;
+        const toastListeners = new Set();
+        let toastState = [];
+
+        const showToast = (message, type = 'info', duration = 3000) => {
+            const id = ++toastIdCounter;
+            const toast = { id, message, type, duration, exiting: false };
+            toastState = [...toastState, toast];
+            toastListeners.forEach(fn => fn(toastState));
+
+            setTimeout(() => {
+                toastState = toastState.map(t => t.id === id ? { ...t, exiting: true } : t);
+                toastListeners.forEach(fn => fn(toastState));
+                setTimeout(() => {
+                    toastState = toastState.filter(t => t.id !== id);
+                    toastListeners.forEach(fn => fn(toastState));
+                }, 300);
+            }, duration);
+        };
+
+        const useToasts = () => {
+            const [toasts, setToasts] = useState(toastState);
+            useEffect(() => {
+                toastListeners.add(setToasts);
+                return () => toastListeners.delete(setToasts);
+            }, []);
+            return toasts;
+        };
+
+        const ToastContainer = () => {
+            const toasts = useToasts();
+            const typeStyles = {
+                success: 'border-l-4 border-[#00ff88] bg-[#00ff8815] text-[#00ff88]',
+                error: 'border-l-4 border-[#ff003c] bg-[#ff003c15] text-[#ff003c]',
+                info: 'border-l-4 border-[#00f0ff] bg-[#00f0ff15] text-[#00f0ff]',
+            };
+            return (
+                <div className="fixed bottom-4 left-1/2 -translate-x-1/2 z-[100] flex flex-col gap-2 w-[90vw] max-w-sm pointer-events-none">
+                    {toasts.map(t => (
+                        <div key={t.id}
+                            className={`glass-panel rounded-lg px-4 py-3 text-sm font-tech pointer-events-auto ${typeStyles[t.type] || typeStyles.info} ${t.exiting ? 'toast-exit' : 'toast-enter'}`}>
+                            {t.message}
+                        </div>
+                    ))}
+                </div>
+            );
         };
 
         // --- Icons ---
@@ -241,15 +340,12 @@
 
         // --- Components ---
 
-        // 1. Physics World (Background) ⚛️
+        // 1. Physics World (Background)
         const PhysicsBackground = ({ onEngineReady }) => {
             const sceneRef = useRef(null);
             const engineRef = useRef(null);
-            const renderRef = useRef(null);
-            const runnerRef = useRef(null);
 
             useEffect(() => {
-                // Setup Matter.js
                 const engine = Engine.create();
                 const world = engine.world;
                 engineRef.current = engine;
@@ -265,48 +361,35 @@
                         pixelRatio: window.devicePixelRatio
                     }
                 });
-                renderRef.current = render;
 
-                // Walls
                 const updateWalls = () => {
-                    Composite.clear(world, false, true); // Keep bodies, remove constraints/walls if tagged
+                    Composite.clear(world, false, true);
                     const width = window.innerWidth;
                     const height = window.innerHeight;
                     const wallOptions = { isStatic: true, render: { fillStyle: '#13131f' } };
-
                     World.add(world, [
-                        Bodies.rectangle(width / 2, height + 50, width, 100, wallOptions), // Floor
-                        Bodies.rectangle(-50, height / 2, 100, height * 4, wallOptions), // Left
-                        Bodies.rectangle(width + 50, height / 2, 100, height * 4, wallOptions) // Right
+                        Bodies.rectangle(width / 2, height + 50, width, 100, wallOptions),
+                        Bodies.rectangle(-50, height / 2, 100, height * 4, wallOptions),
+                        Bodies.rectangle(width + 50, height / 2, 100, height * 4, wallOptions)
                     ]);
                 };
                 updateWalls();
 
-                // Mouse Control (The "Antigravity" Experience)
                 const mouse = Mouse.create(render.canvas);
                 const mouseConstraint = MouseConstraint.create(engine, {
                     mouse: mouse,
-                    constraint: {
-                        stiffness: 0.2, // Smoother grab
-                        render: { visible: false }
-                    }
+                    constraint: { stiffness: 0.2, render: { visible: false } }
                 });
                 World.add(world, mouseConstraint);
-
-                // Allow scrolling on non-canvas elements (pass through events)
                 mouse.element.removeEventListener("mousewheel", mouse.mousewheel);
                 mouse.element.removeEventListener("DOMMouseScroll", mouse.mousewheel);
 
-                // Runner
                 const runner = Runner.create();
-                runnerRef.current = runner;
                 Runner.run(runner, engine);
                 Render.run(render);
 
-                // Initial callback
                 if (onEngineReady) onEngineReady(engine);
 
-                // Resize Handler
                 const handleResize = () => {
                     render.canvas.width = window.innerWidth;
                     render.canvas.height = window.innerHeight;
@@ -325,71 +408,37 @@
             return <div ref={sceneRef} className="fixed inset-0 z-0 pointer-events-auto" />;
         };
 
-        // 2. Smart Input Components (Design System) 🎨
+        // 2. Smart Input Components
         const RepeaterButton = ({ onClick, className, children }) => {
             const repeater = useRepeater(onClick);
             const hasStartedRef = useRef(false);
-
-            const handlePointerDown = (e) => {
-                e.preventDefault();
-                if (hasStartedRef.current) return;
-                hasStartedRef.current = true;
-                repeater.start();
-            };
-
-            const handlePointerUp = (e) => {
-                e.preventDefault();
-                hasStartedRef.current = false;
-                repeater.stop();
-            };
-
-            const handlePointerCancel = (e) => {
-                e.preventDefault();
-                hasStartedRef.current = false;
-                repeater.stop();
-            };
-
+            const handlePointerDown = (e) => { e.preventDefault(); if (hasStartedRef.current) return; hasStartedRef.current = true; repeater.start(); };
+            const handlePointerUp = (e) => { e.preventDefault(); hasStartedRef.current = false; repeater.stop(); };
             return (
-                <button
-                    onPointerDown={handlePointerDown}
-                    onPointerUp={handlePointerUp}
-                    onPointerCancel={handlePointerCancel}
-                    onPointerLeave={handlePointerUp}
-                    className={`${className} no-select`}
-                    type="button"
-                >
+                <button onPointerDown={handlePointerDown} onPointerUp={handlePointerUp}
+                    onPointerCancel={handlePointerUp} onPointerLeave={handlePointerUp}
+                    className={`${className} no-select`} type="button">
                     {children}
                 </button>
             );
         };
 
-        const SmartNumberInput = ({ label, value, unit, onChange, steps = [-10, -1, 1, 10], min = 0, max = 999999 }) => {
+        const SmartNumberInput = ({ label, value, unit, onChange, steps = [-10, -1, 1, 10], min = 0, max = 999999, error = false }) => {
             const adjust = (delta) => {
                 let next = parseFloat((value + delta).toFixed(1));
                 if (next < min) next = min;
                 if (next > max) next = max;
                 onChange(next);
             };
-
             const handleKeyDown = (e) => {
-                if (e.key === 'ArrowUp' || e.key === 'ArrowRight') {
-                    e.preventDefault();
-                    adjust(e.shiftKey ? steps[3] : steps[2]); // +10 or +1
-                } else if (e.key === 'ArrowDown' || e.key === 'ArrowLeft') {
-                    e.preventDefault();
-                    adjust(e.shiftKey ? steps[0] : steps[1]); // -10 or -1
-                }
+                if (e.key === 'ArrowUp' || e.key === 'ArrowRight') { e.preventDefault(); adjust(e.shiftKey ? steps[3] : steps[2]); }
+                else if (e.key === 'ArrowDown' || e.key === 'ArrowLeft') { e.preventDefault(); adjust(e.shiftKey ? steps[0] : steps[1]); }
             };
-
             return (
                 <div className="flex flex-col gap-1 mb-2">
                     <label className="text-cyber-dim text-xs font-tech uppercase tracking-wider pl-1">{label}</label>
-                    <div
-                        className="flex items-center justify-between glass-input rounded-lg p-1 focus-within:border-cyber-primary focus-within:shadow-[0_0_15px_rgba(0,240,255,0.2)]"
-                        tabIndex="0"
-                        onKeyDown={handleKeyDown}
-                    >
-                        {/* Minus Buttons */}
+                    <div className={`flex items-center justify-between glass-input rounded-lg p-1 focus-within:border-cyber-primary focus-within:shadow-[0_0_15px_rgba(0,240,255,0.2)] ${error ? 'input-error shake' : ''}`}
+                        tabIndex="0" onKeyDown={handleKeyDown}>
                         <div className="flex gap-1">
                             {steps.filter(s => s < 0).map(step => (
                                 <RepeaterButton key={step} onClick={() => adjust(step)}
@@ -398,19 +447,11 @@
                                 </RepeaterButton>
                             ))}
                         </div>
-
-                        {/* Display (Editable) */}
                         <div className="flex items-baseline gap-1 flex-1 justify-center">
-                            <input
-                                type="number"
-                                value={value}
-                                onChange={(e) => onChange(parseFloat(e.target.value))}
-                                className="w-20 bg-transparent text-2xl font-display text-cyber-primary text-center focus:outline-none appearance-none p-0"
-                            />
+                            <input type="number" value={value} onChange={(e) => onChange(parseFloat(e.target.value))}
+                                className="w-20 bg-transparent text-2xl font-display text-cyber-primary text-center focus:outline-none appearance-none p-0" />
                             <span className="text-xs text-cyber-dim font-tech">{unit}</span>
                         </div>
-
-                        {/* Plus Buttons */}
                         <div className="flex gap-1">
                             {steps.filter(s => s > 0).map(step => (
                                 <RepeaterButton key={step} onClick={() => adjust(step)}
@@ -424,16 +465,12 @@
             );
         };
 
-        const DateTimeInput = ({ label, value, onChange }) => {
+        const DateTimeInput = ({ label, value, onChange, error = false }) => {
             return (
                 <div className="flex flex-col gap-1 mb-4">
                     <label className="text-cyber-dim text-xs font-tech uppercase tracking-wider pl-1">{label}</label>
-                    <input
-                        type="datetime-local"
-                        value={value}
-                        onChange={(e) => onChange(e.target.value)}
-                        className="glass-input w-full rounded-lg p-3 text-xl font-display text-center text-cyber-primary"
-                    />
+                    <input type="datetime-local" value={value} onChange={(e) => onChange(e.target.value)}
+                        className={`glass-input w-full rounded-lg p-3 text-xl font-display text-center text-cyber-primary ${error ? 'input-error shake' : ''}`} />
                 </div>
             );
         };
@@ -446,7 +483,6 @@
                     </RepeaterButton>
                     <div className="w-10 h-14 bg-black/80 border border-cyber-glassBorder rounded flex items-center justify-center overflow-hidden relative shadow-[inset_0_0_10px_rgba(0,0,0,0.8)]">
                         <div className="text-3xl font-display text-white z-10">{value}</div>
-                        {/* Shine effect */}
                         <div className="absolute top-0 left-0 w-full h-1/2 bg-gradient-to-b from-white/10 to-transparent pointer-events-none"></div>
                     </div>
                     <RepeaterButton onClick={onDown} className="cyber-btn p-1 text-cyber-primary hover:text-white transition-colors">
@@ -457,55 +493,610 @@
         };
 
         const Odometer = ({ value, onChange }) => {
-            // value is total km. Split into 6 digits.
             const digits = String(value).padStart(6, '0').split('').map(Number);
-
             const updateDigit = (index, delta) => {
                 let newDigits = [...digits];
                 let val = newDigits[index] + delta;
                 if (val > 9) val = 0;
                 if (val < 0) val = 9;
                 newDigits[index] = val;
-
-                const newValue = parseInt(newDigits.join(''));
-                onChange(newValue);
+                onChange(parseInt(newDigits.join('')));
             };
-
             return (
                 <div className="flex flex-col gap-1 mb-4">
                     <label className="text-cyber-dim text-xs font-tech uppercase tracking-wider pl-1">Odometer (km)</label>
                     <div className="glass-panel rounded-xl p-3 flex justify-center gap-2 bg-gradient-to-b from-cyber-dark/80 to-cyber-black/80">
                         {digits.map((d, i) => (
-                            <OdometerDigit
-                                key={i}
-                                value={d}
-                                onUp={() => updateDigit(i, 1)}
-                                onDown={() => updateDigit(i, -1)}
-                            />
+                            <OdometerDigit key={i} value={d} onUp={() => updateDigit(i, 1)} onDown={() => updateDigit(i, -1)} />
                         ))}
                     </div>
                 </div>
             );
         };
 
-        // 3. Settings & History Components 👨‍💻
-        const SettingsModal = ({ isOpen, onClose, gasUrl, setGasUrl, locations, setLocations }) => {
+        // --- Onboarding Component ---
+        const Onboarding = ({ onComplete, setVehicleSettings }) => {
+            const [step, setStep] = useState(0);
+            const [capacity, setCapacity] = useState(DEFAULT_BATTERY_CAPACITY);
+            const [rate, setRate] = useState(DEFAULT_ELECTRICITY_RATE);
+            const [nightRate, setNightRate] = useState(DEFAULT_NIGHT_RATE);
+            const [useNightRate, setUseNightRate] = useState(false);
+            const [gasUrl, setGasUrl] = useState(PRE_CONFIGURED_GAS_URL);
+
+            useEffect(() => { lucide.createIcons(); });
+
+            const steps = [
+                // Step 0: Welcome
+                <div key={0} className="slide-in text-center">
+                    <div className="text-6xl mb-4">{'\u26A1'}</div>
+                    <h2 className="text-3xl font-display text-cyber-primary text-neon mb-4">EV GRAVITY LOGGER</h2>
+                    <p className="text-cyber-text text-lg mb-2">EV充電セッションを記録・分析</p>
+                    <p className="text-cyber-dim text-sm">サイバーパンクUIで充電管理を楽しく</p>
+                    <div className="mt-8 glass-panel rounded-lg p-4 text-left">
+                        <div className="flex items-center gap-2 text-cyber-primary mb-2"><Icon name="battery-charging" size={16} /> 2フェーズ充電記録</div>
+                        <div className="flex items-center gap-2 text-cyber-primary mb-2"><Icon name="bar-chart-3" size={16} /> 統計ダッシュボード</div>
+                        <div className="flex items-center gap-2 text-cyber-primary mb-2"><Icon name="download" size={16} /> CSVエクスポート</div>
+                        <div className="flex items-center gap-2 text-cyber-primary"><Icon name="cloud" size={16} /> Google Sheets連携</div>
+                    </div>
+                </div>,
+                // Step 1: Vehicle settings
+                <div key={1} className="slide-in">
+                    <h2 className="text-xl font-display text-cyber-primary mb-6 flex items-center gap-2">
+                        <Icon name="car" /> Vehicle Settings
+                    </h2>
+                    <div className="space-y-4">
+                        <div>
+                            <label className="text-cyber-dim text-xs font-tech uppercase block mb-1">Battery Capacity (kWh)</label>
+                            <input type="number" value={capacity} onChange={e => setCapacity(Number(e.target.value))}
+                                className="w-full glass-input rounded-lg p-3 text-xl font-display text-center" />
+                            <p className="text-xs text-cyber-dim mt-1">AZE0 Leaf = 30kWh</p>
+                        </div>
+                        <div>
+                            <label className="text-cyber-dim text-xs font-tech uppercase block mb-1">Electricity Rate (JPY/kWh)</label>
+                            <input type="number" value={rate} onChange={e => setRate(Number(e.target.value))} step="0.01"
+                                className="w-full glass-input rounded-lg p-3 text-xl font-display text-center" />
+                        </div>
+                        <div className="flex items-center gap-3 mt-2">
+                            <input type="checkbox" checked={useNightRate} onChange={e => setUseNightRate(e.target.checked)}
+                                className="w-5 h-5 accent-cyber-primary" />
+                            <label className="text-cyber-dim text-sm">Night Rate</label>
+                            {useNightRate && (
+                                <input type="number" value={nightRate} onChange={e => setNightRate(Number(e.target.value))} step="0.01"
+                                    className="glass-input rounded p-2 text-sm w-24 ml-auto" />
+                            )}
+                        </div>
+                    </div>
+                </div>,
+                // Step 2: GAS URL
+                <div key={2} className="slide-in">
+                    <h2 className="text-xl font-display text-cyber-primary mb-6 flex items-center gap-2">
+                        <Icon name="cloud" /> Google Sheets Link
+                    </h2>
+                    <p className="text-cyber-dim text-sm mb-4">Google Apps Script URLを設定すると、充電データが自動的にスプレッドシートに送信されます。</p>
+                    <input type="text" value={gasUrl} onChange={e => setGasUrl(e.target.value)}
+                        placeholder="https://script.google.com/..."
+                        className="w-full glass-input rounded-lg p-3 text-sm mb-4" />
+                    <p className="text-xs text-cyber-dim">後から設定画面で変更できます。スキップ可。</p>
+                </div>
+            ];
+
+            const handleNext = () => {
+                if (step < steps.length - 1) {
+                    setStep(step + 1);
+                } else {
+                    // Save settings and complete
+                    const vehicleSettings = {
+                        batteryCapacity: capacity,
+                        electricityRate: rate,
+                        nightRate: nightRate,
+                        useNightRate: useNightRate,
+                        gasUrl: gasUrl
+                    };
+                    setVehicleSettings(vehicleSettings);
+                    localStorage.setItem(STORAGE_KEY_ONBOARDING, 'true');
+                    onComplete(vehicleSettings);
+                }
+            };
+
+            return (
+                <div className="fixed inset-0 z-[90] flex items-center justify-center p-4 bg-cyber-black/95 backdrop-blur-lg">
+                    <div className="w-full max-w-sm">
+                        <div className="glass-panel rounded-2xl p-6 mb-4 min-h-[400px] flex flex-col justify-between">
+                            <div className="flex-1">{steps[step]}</div>
+                            <div className="mt-6">
+                                <button onClick={handleNext}
+                                    className="w-full py-4 rounded-xl font-display font-bold text-lg tracking-widest uppercase bg-gradient-to-r from-cyber-primary to-cyber-secondary text-black hover:shadow-lg transition-all">
+                                    {step < steps.length - 1 ? 'NEXT' : 'START'}
+                                </button>
+                                {step > 0 && (
+                                    <button onClick={() => setStep(step - 1)} className="w-full mt-2 py-2 text-cyber-dim text-sm hover:text-white">
+                                        Back
+                                    </button>
+                                )}
+                            </div>
+                        </div>
+                        {/* Dot indicators */}
+                        <div className="flex justify-center gap-2">
+                            {steps.map((_, i) => (
+                                <div key={i} className={`w-2 h-2 rounded-full transition-colors ${i === step ? 'bg-cyber-primary' : 'bg-cyber-dim/40'}`} />
+                            ))}
+                        </div>
+                    </div>
+                </div>
+            );
+        };
+
+        // --- Progress Ring SVG ---
+        const ProgressRing = ({ radius = 70, stroke = 6, progress = 0 }) => {
+            const normalizedRadius = radius - stroke;
+            const circumference = normalizedRadius * 2 * Math.PI;
+            const strokeDashoffset = circumference - (progress / 100) * circumference;
+
+            return (
+                <svg height={radius * 2} width={radius * 2} className="mx-auto">
+                    <circle stroke="rgba(255,255,255,0.08)" fill="transparent" strokeWidth={stroke}
+                        r={normalizedRadius} cx={radius} cy={radius} />
+                    <circle className="progress-ring-circle" stroke="#00f0ff" fill="transparent"
+                        strokeWidth={stroke} strokeLinecap="round"
+                        strokeDasharray={`${circumference} ${circumference}`}
+                        style={{ strokeDashoffset }} r={normalizedRadius} cx={radius} cy={radius} />
+                </svg>
+            );
+        };
+
+        // --- Live Charging Screen ---
+        const LiveChargingScreen = ({ session, settings, endTime, setEndTime, endBattery, setEndBattery, endRange, setEndRange, onComplete, onCancel, isSaving, validationErrors }) => {
+            const [elapsed, setElapsed] = useState(0);
+
+            useEffect(() => {
+                const startMs = new Date(session.startTime).getTime();
+                const tick = () => setElapsed(Math.floor((Date.now() - startMs) / 1000));
+                tick();
+                const id = setInterval(tick, 1000);
+                return () => clearInterval(id);
+            }, [session.startTime]);
+
+            useEffect(() => { lucide.createIcons(); });
+
+            const locationKw = session.kw || 3;
+            const capacity = settings.batteryCapacity || DEFAULT_BATTERY_CAPACITY;
+            const rate = settings.electricityRate || DEFAULT_ELECTRICITY_RATE;
+
+            // Live estimates
+            const remainPct = 100 - session.startBattery;
+            const remainKwh = capacity * remainPct / 100;
+            const estTotalMinutes = locationKw > 0 ? (remainKwh / locationKw) * 60 : 0;
+            const estCompletionTime = new Date(new Date(session.startTime).getTime() + estTotalMinutes * 60000);
+            const elapsedKwh = locationKw * (elapsed / 3600);
+            const liveCost = Math.round(elapsedKwh * rate);
+            const currentPct = Math.min(100, session.startBattery + (elapsedKwh / capacity) * 100);
+            const progress = remainPct > 0 ? Math.min(100, ((currentPct - session.startBattery) / remainPct) * 100) : 100;
+
+            return (
+                <div className="pulse-glow glass-panel rounded-2xl p-4 border-t border-cyber-glassBorder backdrop-blur-xl bg-black/40 shadow-2xl">
+                    <div className="flex justify-between items-start mb-4">
+                        <div className="flex items-center gap-2 text-cyber-accent">
+                            <Icon name="battery-charging" />
+                            <h2 className="text-lg font-display animate-pulse">CHARGING...</h2>
+                        </div>
+                        <button onClick={onCancel} className="text-xs text-cyber-dim underline hover:text-white">Cancel</button>
+                    </div>
+
+                    {/* Progress Ring + Timer */}
+                    <div className="relative flex items-center justify-center mb-4">
+                        <ProgressRing radius={70} stroke={6} progress={progress} />
+                        <div className="absolute text-center">
+                            <div className="text-3xl font-display text-cyber-primary text-neon">{formatTimer(elapsed)}</div>
+                            <div className="text-xs text-cyber-dim">elapsed</div>
+                        </div>
+                    </div>
+
+                    {/* Live Stats Row */}
+                    <div className="grid grid-cols-3 gap-2 mb-4">
+                        <div className="glass-panel rounded-lg p-2 text-center">
+                            <div className="text-xs text-cyber-dim">Est. %</div>
+                            <div className="text-xl font-display text-cyber-primary">{Math.round(currentPct)}%</div>
+                        </div>
+                        <div className="glass-panel rounded-lg p-2 text-center">
+                            <div className="text-xs text-cyber-dim">Cost</div>
+                            <div className="text-xl font-display text-cyber-success">&yen;{liveCost}</div>
+                        </div>
+                        <div className="glass-panel rounded-lg p-2 text-center">
+                            <div className="text-xs text-cyber-dim">Est. Done</div>
+                            <div className="text-sm font-display text-white">{estCompletionTime.getHours().toString().padStart(2,'0')}:{estCompletionTime.getMinutes().toString().padStart(2,'0')}</div>
+                        </div>
+                    </div>
+
+                    {/* Session Info */}
+                    <div className="bg-white/5 rounded-lg p-2 mb-4 text-xs">
+                        <div className="flex justify-between text-cyber-dim">
+                            <span>Start: {formatDate(session.startTime)}</span>
+                            <span>{session.startBattery}% / {session.startRange}km</span>
+                        </div>
+                        {session.locationName && (
+                            <div className="text-cyber-primary mt-1 flex items-center gap-1">
+                                <Icon name="map-pin" size={10} /> {session.locationName} ({locationKw}kW)
+                            </div>
+                        )}
+                    </div>
+
+                    {/* End Inputs (compact) */}
+                    <div className="space-y-2">
+                        <DateTimeInput label="End Time" value={endTime} onChange={setEndTime} error={validationErrors.endTime} />
+                        <SmartNumberInput label="Battery (End)" value={endBattery} unit="%" min={0} max={100}
+                            onChange={setEndBattery} error={validationErrors.endBattery} />
+                        <SmartNumberInput label="Range (End)" value={endRange} unit="km" steps={[-10, -1, 1, 10]}
+                            min={0} max={1000} onChange={setEndRange} error={validationErrors.endRange} />
+                    </div>
+
+                    <button onClick={onComplete} disabled={isSaving}
+                        className={`w-full mt-4 py-4 rounded-xl font-display font-bold text-xl tracking-widest uppercase transition-all transform active:scale-95
+                            ${isSaving ? 'bg-cyber-primary text-black shadow-[0_0_30px_#00f0ff]' : 'bg-cyber-primary text-black shadow-lg hover:shadow-cyber-primary/50'}`}>
+                        {isSaving ? <span><span className="spinner mr-2"></span>SAVING...</span> : 'COMPLETE & SAVE'}
+                    </button>
+                </div>
+            );
+        };
+
+        // --- Completion Summary Overlay ---
+        const CompletionSummary = ({ record, settings, onDismiss }) => {
+            const [particles, setParticles] = useState([]);
+            useEffect(() => {
+                lucide.createIcons();
+                // Generate particles
+                const ps = Array.from({ length: 24 }, (_, i) => ({
+                    id: i,
+                    x: `${(Math.random() - 0.5) * 200}px`,
+                    y: `${(Math.random() - 0.5) * 200}px`,
+                    color: getRandomColor(),
+                    delay: `${Math.random() * 0.3}s`,
+                }));
+                setParticles(ps);
+                const timer = setTimeout(onDismiss, 4000);
+                return () => clearTimeout(timer);
+            }, []);
+
+            const capacity = settings.batteryCapacity || DEFAULT_BATTERY_CAPACITY;
+            const rate = settings.electricityRate || DEFAULT_ELECTRICITY_RATE;
+            const kwh = calcChargedKwh(capacity, record.startBattery, record.endBattery);
+            const cost = calcCost(kwh, rate);
+            const duration = calcDurationMinutes(record.startTime, record.endTime);
+
+            return (
+                <div className="fixed inset-0 z-[80] flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm" onClick={onDismiss}>
+                    <div className="relative">
+                        {/* Particles */}
+                        {particles.map(p => (
+                            <div key={p.id} className="particle"
+                                style={{ '--px': p.x, '--py': p.y, background: p.color, animationDelay: p.delay, left: '50%', top: '50%' }} />
+                        ))}
+                        <div className="glass-panel rounded-2xl p-6 text-center min-w-[280px] border border-cyber-primary/30">
+                            <div className="text-4xl mb-2">{'\u26A1'}</div>
+                            <h2 className="text-2xl font-display text-cyber-primary text-neon mb-4">CHARGE COMPLETE</h2>
+                            <div className="grid grid-cols-3 gap-3 mb-4">
+                                <div>
+                                    <div className="text-2xl font-display text-white">{kwh.toFixed(1)}</div>
+                                    <div className="text-xs text-cyber-dim">kWh</div>
+                                </div>
+                                <div>
+                                    <div className="text-2xl font-display text-cyber-success">&yen;{cost}</div>
+                                    <div className="text-xs text-cyber-dim">Cost</div>
+                                </div>
+                                <div>
+                                    <div className="text-2xl font-display text-white">{formatDuration(duration)}</div>
+                                    <div className="text-xs text-cyber-dim">Duration</div>
+                                </div>
+                            </div>
+                            <div className="text-sm text-cyber-dim">
+                                {record.startBattery}% → {record.endBattery}%
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            );
+        };
+
+        // --- Stats Dashboard ---
+        const StatsDashboard = ({ isOpen, onClose, history, settings }) => {
+            const [period, setPeriod] = useState('ALL');
+            const canvasBarRef = useRef(null);
+            const canvasLineRef = useRef(null);
+            const canvasLocRef = useRef(null);
+
+            useEffect(() => { lucide.createIcons(); });
+
+            const capacity = settings.batteryCapacity || DEFAULT_BATTERY_CAPACITY;
+            const rate = settings.electricityRate || DEFAULT_ELECTRICITY_RATE;
+
+            const filteredHistory = useMemo(() => {
+                if (period === 'ALL') return history;
+                const months = { '1M': 1, '3M': 3, '6M': 6 }[period] || 999;
+                const cutoff = new Date();
+                cutoff.setMonth(cutoff.getMonth() - months);
+                return history.filter(h => new Date(h.startTime || h.timestamp) >= cutoff);
+            }, [history, period]);
+
+            // Summary stats
+            const stats = useMemo(() => {
+                let totalKwh = 0, totalCost = 0, totalEffKm = 0, totalEffKwh = 0, effCount = 0;
+                filteredHistory.forEach(h => {
+                    const kwh = calcChargedKwh(capacity, h.startBattery || 0, h.endBattery || h.batteryAfter || 0);
+                    const cost = calcCost(kwh, rate);
+                    totalKwh += kwh;
+                    totalCost += cost;
+                    if (h.efficiency && h.efficiency > 0) {
+                        totalEffKm += h.efficiency;
+                        effCount++;
+                    }
+                });
+                return {
+                    count: filteredHistory.length,
+                    totalKwh: totalKwh.toFixed(1),
+                    totalCost: Math.round(totalCost),
+                    avgEfficiency: effCount > 0 ? (totalEffKm / effCount).toFixed(1) : '-',
+                };
+            }, [filteredHistory, capacity, rate]);
+
+            // Monthly bar chart
+            useEffect(() => {
+                const canvas = canvasBarRef.current;
+                if (!canvas || filteredHistory.length === 0) return;
+                const ctx = canvas.getContext('2d');
+                const W = canvas.width = canvas.parentElement.clientWidth;
+                const H = canvas.height = 160;
+                ctx.clearRect(0, 0, W, H);
+
+                // Group by month
+                const monthMap = {};
+                filteredHistory.forEach(h => {
+                    const d = new Date(h.startTime || h.timestamp);
+                    const key = `${d.getFullYear()}-${(d.getMonth()+1).toString().padStart(2,'0')}`;
+                    monthMap[key] = (monthMap[key] || 0) + 1;
+                });
+                const entries = Object.entries(monthMap).sort((a,b) => a[0].localeCompare(b[0])).slice(-6);
+                if (entries.length === 0) return;
+
+                const maxVal = Math.max(...entries.map(e => e[1]), 1);
+                const barW = Math.min(40, (W - 40) / entries.length - 8);
+                const startX = (W - (barW + 8) * entries.length) / 2;
+
+                entries.forEach(([label, val], i) => {
+                    const x = startX + i * (barW + 8);
+                    const barH = (val / maxVal) * (H - 40);
+                    const y = H - 25 - barH;
+
+                    // Bar gradient
+                    const grad = ctx.createLinearGradient(x, y, x, H - 25);
+                    grad.addColorStop(0, '#00f0ff');
+                    grad.addColorStop(1, '#7000df');
+                    ctx.fillStyle = grad;
+                    ctx.beginPath();
+                    ctx.roundRect(x, y, barW, barH, 4);
+                    ctx.fill();
+
+                    // Value
+                    ctx.fillStyle = '#e0e0e0';
+                    ctx.font = '11px Rajdhani';
+                    ctx.textAlign = 'center';
+                    ctx.fillText(val, x + barW/2, y - 4);
+
+                    // Label
+                    ctx.fillStyle = '#8888aa';
+                    ctx.font = '10px Rajdhani';
+                    ctx.fillText(label.slice(5), x + barW/2, H - 8);
+                });
+            }, [filteredHistory]);
+
+            // Efficiency trend line
+            useEffect(() => {
+                const canvas = canvasLineRef.current;
+                if (!canvas || filteredHistory.length === 0) return;
+                const ctx = canvas.getContext('2d');
+                const W = canvas.width = canvas.parentElement.clientWidth;
+                const H = canvas.height = 120;
+                ctx.clearRect(0, 0, W, H);
+
+                const recent = [...filteredHistory].reverse().slice(0, 20).reverse();
+                const effData = recent.map(h => h.efficiency || 0).filter(v => v > 0);
+                if (effData.length < 2) return;
+
+                const maxVal = Math.max(...effData, 1);
+                const minVal = Math.min(...effData);
+                const range = maxVal - minVal || 1;
+                const padY = 20;
+                const padX = 20;
+
+                ctx.beginPath();
+                ctx.strokeStyle = '#00f0ff';
+                ctx.lineWidth = 2;
+                effData.forEach((v, i) => {
+                    const x = padX + (i / (effData.length - 1)) * (W - padX * 2);
+                    const y = padY + (1 - (v - minVal) / range) * (H - padY * 2);
+                    if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+                });
+                ctx.stroke();
+
+                // Dots
+                effData.forEach((v, i) => {
+                    const x = padX + (i / (effData.length - 1)) * (W - padX * 2);
+                    const y = padY + (1 - (v - minVal) / range) * (H - padY * 2);
+                    ctx.beginPath();
+                    ctx.arc(x, y, 3, 0, Math.PI * 2);
+                    ctx.fillStyle = '#00f0ff';
+                    ctx.fill();
+                });
+
+                // Axis labels
+                ctx.fillStyle = '#8888aa';
+                ctx.font = '10px Rajdhani';
+                ctx.textAlign = 'left';
+                ctx.fillText(maxVal.toFixed(1), 2, padY + 4);
+                ctx.fillText(minVal.toFixed(1), 2, H - padY + 12);
+            }, [filteredHistory]);
+
+            // Location bar chart
+            useEffect(() => {
+                const canvas = canvasLocRef.current;
+                if (!canvas || filteredHistory.length === 0) return;
+                const ctx = canvas.getContext('2d');
+                const W = canvas.width = canvas.parentElement.clientWidth;
+
+                const locMap = {};
+                filteredHistory.forEach(h => {
+                    const name = h.locationName || 'Unknown';
+                    locMap[name] = (locMap[name] || 0) + 1;
+                });
+                const entries = Object.entries(locMap).sort((a,b) => b[1] - a[1]).slice(0, 5);
+                if (entries.length === 0) return;
+
+                const H = canvas.height = entries.length * 30 + 10;
+                ctx.clearRect(0, 0, W, H);
+                const maxVal = Math.max(...entries.map(e => e[1]), 1);
+
+                entries.forEach(([label, val], i) => {
+                    const y = i * 30 + 5;
+                    const barW = (val / maxVal) * (W - 100);
+
+                    ctx.fillStyle = '#7000df';
+                    ctx.beginPath();
+                    ctx.roundRect(90, y, barW, 20, 4);
+                    ctx.fill();
+
+                    ctx.fillStyle = '#e0e0e0';
+                    ctx.font = '11px Rajdhani';
+                    ctx.textAlign = 'right';
+                    ctx.fillText(label.slice(0, 10), 85, y + 14);
+
+                    ctx.textAlign = 'left';
+                    ctx.fillText(val, 90 + barW + 5, y + 14);
+                });
+            }, [filteredHistory]);
+
+            if (!isOpen) return null;
+            return (
+                <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center sm:p-4 bg-black/80 backdrop-blur-sm">
+                    <div className="glass-panel w-full sm:max-w-lg h-[90vh] sm:h-auto sm:max-h-[90vh] rounded-t-2xl sm:rounded-2xl p-4 relative flex flex-col overflow-y-auto cyber-scroll">
+                        <div className="flex justify-between items-center mb-4">
+                            <h2 className="text-xl font-display text-cyber-primary flex items-center gap-2">
+                                <Icon name="bar-chart-3" /> Statistics
+                            </h2>
+                            <button onClick={onClose} className="text-cyber-dim hover:text-white"><Icon name="x" /></button>
+                        </div>
+
+                        {/* Period filter */}
+                        <div className="flex gap-2 mb-4">
+                            {['1M', '3M', '6M', 'ALL'].map(p => (
+                                <button key={p} onClick={() => setPeriod(p)}
+                                    className={`px-3 py-1 rounded text-xs font-bold font-tech uppercase transition-colors ${period === p ? 'bg-cyber-primary text-black' : 'bg-white/5 text-cyber-dim hover:text-white'}`}>
+                                    {p}
+                                </button>
+                            ))}
+                        </div>
+
+                        {/* Summary Cards */}
+                        <div className="grid grid-cols-2 gap-2 mb-4">
+                            <div className="glass-panel rounded-lg p-3 text-center">
+                                <div className="text-2xl font-display text-white">{stats.count}</div>
+                                <div className="text-xs text-cyber-dim">Total Sessions</div>
+                            </div>
+                            <div className="glass-panel rounded-lg p-3 text-center">
+                                <div className="text-2xl font-display text-cyber-primary">{stats.totalKwh}</div>
+                                <div className="text-xs text-cyber-dim">Total kWh</div>
+                            </div>
+                            <div className="glass-panel rounded-lg p-3 text-center">
+                                <div className="text-2xl font-display text-cyber-success">&yen;{stats.totalCost}</div>
+                                <div className="text-xs text-cyber-dim">Total Cost</div>
+                            </div>
+                            <div className="glass-panel rounded-lg p-3 text-center">
+                                <div className="text-2xl font-display text-white">{stats.avgEfficiency}</div>
+                                <div className="text-xs text-cyber-dim">Avg km/kWh</div>
+                            </div>
+                        </div>
+
+                        {filteredHistory.length === 0 ? (
+                            <div className="text-center text-cyber-dim py-10">No data for this period.</div>
+                        ) : (
+                            <>
+                                {/* Monthly chart */}
+                                <div className="mb-4">
+                                    <h3 className="text-sm font-bold text-cyber-dim mb-2 uppercase">Monthly Charges</h3>
+                                    <div className="glass-panel rounded-lg p-2"><canvas ref={canvasBarRef}></canvas></div>
+                                </div>
+
+                                {/* Efficiency trend */}
+                                <div className="mb-4">
+                                    <h3 className="text-sm font-bold text-cyber-dim mb-2 uppercase">Efficiency Trend (km/kWh)</h3>
+                                    <div className="glass-panel rounded-lg p-2"><canvas ref={canvasLineRef}></canvas></div>
+                                </div>
+
+                                {/* Location chart */}
+                                <div className="mb-4">
+                                    <h3 className="text-sm font-bold text-cyber-dim mb-2 uppercase">By Location</h3>
+                                    <div className="glass-panel rounded-lg p-2"><canvas ref={canvasLocRef}></canvas></div>
+                                </div>
+                            </>
+                        )}
+
+                        <button onClick={onClose} className="w-full py-3 mt-2 bg-cyber-dark border border-cyber-dim text-cyber-dim font-bold rounded-xl uppercase tracking-widest hover:text-white hover:border-white transition-colors">
+                            Close
+                        </button>
+                    </div>
+                </div>
+            );
+        };
+
+        // --- CSV Export ---
+        const exportCSV = (history, settings) => {
+            const capacity = settings.batteryCapacity || DEFAULT_BATTERY_CAPACITY;
+            const rate = settings.electricityRate || DEFAULT_ELECTRICITY_RATE;
+            const BOM = '\uFEFF';
+            const headers = ['Date','Start Time','End Time','Odometer','Start %','End %','Start Range','End Range','Charged kWh','Cost (JPY)','Duration','Charge Speed (kW)','Efficiency','Location'];
+            const rows = history.map(h => {
+                const kwh = calcChargedKwh(capacity, h.startBattery || 0, h.endBattery || h.batteryAfter || 0);
+                const cost = calcCost(kwh, rate);
+                const duration = h.startTime && h.endTime ? calcDurationMinutes(h.startTime, h.endTime) : 0;
+                const speed = calcChargeSpeed(kwh, duration);
+                return [
+                    h.startTime ? formatDate(h.startTime) : formatDate(h.timestamp),
+                    h.startTime || '',
+                    h.endTime || '',
+                    h.odometer || '',
+                    h.startBattery || h.battery || '',
+                    h.endBattery || h.batteryAfter || '',
+                    h.startRange || '',
+                    h.endRange || '',
+                    kwh.toFixed(1),
+                    cost,
+                    formatDuration(duration),
+                    speed.toFixed(1),
+                    h.efficiency || '',
+                    h.locationName || ''
+                ].map(v => `"${v}"`).join(',');
+            });
+            const csv = BOM + headers.join(',') + '\n' + rows.join('\n');
+            const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `ev-gravity-log-${new Date().toISOString().slice(0,10)}.csv`;
+            a.click();
+            URL.revokeObjectURL(url);
+            showToast('CSV exported successfully', 'success');
+        };
+
+        // --- Settings Modal (expanded) ---
+        const SettingsModal = ({ isOpen, onClose, settings, setSettings, locations, setLocations, offlineQueue }) => {
             const [newLoc, setNewLoc] = useState({ name: '', voltage: 200, amperage: 15, kw: 3.0 });
             const [editingLocId, setEditingLocId] = useState(null);
 
-            useEffect(() => {
-                lucide.createIcons();
-            });
+            useEffect(() => { lucide.createIcons(); });
 
             const handleSaveLocation = () => {
                 if (!newLoc.name) return;
-
                 if (editingLocId) {
-                    // Update existing
                     setLocations(locations.map(l => l.id === editingLocId ? { ...newLoc, id: editingLocId } : l));
                     setEditingLocId(null);
                 } else {
-                    // Add new
                     setLocations([...locations, { ...newLoc, id: generateId() }]);
                 }
                 setNewLoc({ name: '', voltage: 200, amperage: 15, kw: 3.0 });
@@ -519,24 +1110,55 @@
             const cancelEdit = () => {
                 setNewLoc({ name: '', voltage: 200, amperage: 15, kw: 3.0 });
                 setEditingLocId(null);
-            }
+            };
 
-            const removeLocation = (id) => {
-                setLocations(locations.filter(l => l.id !== id));
+            const removeLocation = (id) => setLocations(locations.filter(l => l.id !== id));
+
+            const updateSetting = (key, value) => {
+                setSettings(prev => ({ ...prev, [key]: value }));
             };
 
             if (!isOpen) return null;
             return (
                 <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
                     <div className="glass-panel w-full max-w-md max-h-[90vh] overflow-y-auto rounded-2xl p-6 relative cyber-scroll">
-                        <button onClick={onClose} className="absolute top-4 right-4 text-cyber-dim hover:text-white">
-                            <Icon name="x" />
-                        </button>
+                        <button onClick={onClose} className="absolute top-4 right-4 text-cyber-dim hover:text-white"><Icon name="x" /></button>
                         <h2 className="text-xl font-display text-cyber-primary mb-6 flex items-center gap-2">
                             <Icon name="settings" /> Settings
                         </h2>
 
-                        <div className="mb-8">
+                        {/* Vehicle Settings */}
+                        <div className="mb-6">
+                            <h3 className="text-sm font-bold text-white mb-3 flex items-center gap-2"><Icon name="car" size={16} /> Vehicle</h3>
+                            <div className="space-y-3">
+                                <div>
+                                    <label className="text-cyber-dim text-xs block mb-1">Battery Capacity (kWh)</label>
+                                    <input type="number" value={settings.batteryCapacity || DEFAULT_BATTERY_CAPACITY}
+                                        onChange={e => updateSetting('batteryCapacity', Number(e.target.value))}
+                                        className="w-full glass-input rounded p-2 text-sm" />
+                                </div>
+                                <div>
+                                    <label className="text-cyber-dim text-xs block mb-1">Electricity Rate (JPY/kWh)</label>
+                                    <input type="number" value={settings.electricityRate || DEFAULT_ELECTRICITY_RATE} step="0.01"
+                                        onChange={e => updateSetting('electricityRate', Number(e.target.value))}
+                                        className="w-full glass-input rounded p-2 text-sm" />
+                                </div>
+                                <div className="flex items-center gap-3">
+                                    <input type="checkbox" checked={settings.useNightRate || false}
+                                        onChange={e => updateSetting('useNightRate', e.target.checked)}
+                                        className="w-4 h-4 accent-cyber-primary" />
+                                    <label className="text-cyber-dim text-xs">Night Rate</label>
+                                    {settings.useNightRate && (
+                                        <input type="number" value={settings.nightRate || DEFAULT_NIGHT_RATE} step="0.01"
+                                            onChange={e => updateSetting('nightRate', Number(e.target.value))}
+                                            className="glass-input rounded p-2 text-sm w-24 ml-auto" />
+                                    )}
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Charging Locations */}
+                        <div className="mb-6">
                             <h3 className="text-sm font-bold text-white mb-2 flex items-center gap-2"><Icon name="map-pin" size={16} /> Charging Locations</h3>
                             <div className="space-y-2 mb-4">
                                 {locations.map(loc => (
@@ -555,7 +1177,7 @@
                             </div>
 
                             <div className="bg-black/40 p-3 rounded border border-white/10">
-                                <div className="text-xs text-cyber-dim mb-2 uppercase">Add New Location</div>
+                                <div className="text-xs text-cyber-dim mb-2 uppercase">{editingLocId ? 'Edit Location' : 'Add New Location'}</div>
                                 <input type="text" placeholder="Name (e.g. Home)" value={newLoc.name} onChange={e => setNewLoc({ ...newLoc, name: e.target.value })} className="w-full glass-input rounded p-2 mb-2 text-sm" />
                                 <div className="grid grid-cols-3 gap-2 mb-2">
                                     <input type="number" placeholder="V" value={newLoc.voltage} onChange={e => setNewLoc({ ...newLoc, voltage: Number(e.target.value) })} className="glass-input rounded p-2 text-sm" />
@@ -565,24 +1187,27 @@
                                 <button onClick={handleSaveLocation} className="w-full py-2 bg-cyber-dark text-cyber-primary border border-cyber-primary rounded hover:bg-cyber-primary hover:text-black transition-colors text-sm font-bold uppercase mb-1">
                                     {editingLocId ? 'Update Location' : 'Add Location'}
                                 </button>
-                                {editingLocId && (
-                                    <button onClick={cancelEdit} className="w-full py-1 text-xs text-cyber-dim hover:text-white underline">
-                                        Cancel Edit
-                                    </button>
-                                )}
+                                {editingLocId && <button onClick={cancelEdit} className="w-full py-1 text-xs text-cyber-dim hover:text-white underline">Cancel Edit</button>}
                             </div>
                         </div>
 
-                        <div className="mb-4">
+                        {/* GAS URL */}
+                        <div className="mb-6">
                             <label className="block text-sm text-cyber-dim mb-2">Google Apps Script URL</label>
-                            <input
-                                type="text"
-                                value={gasUrl}
-                                onChange={(e) => setGasUrl(e.target.value)}
+                            <input type="text" value={settings.gasUrl || ''} onChange={(e) => updateSetting('gasUrl', e.target.value)}
                                 placeholder="https://script.google.com/..."
-                                className="w-full bg-cyber-black/50 border border-cyber-glassBorder rounded p-3 text-white focus:border-cyber-primary focus:outline-none"
-                            />
+                                className="w-full bg-cyber-black/50 border border-cyber-glassBorder rounded p-3 text-white focus:border-cyber-primary focus:outline-none text-sm" />
                         </div>
+
+                        {/* Offline Queue Status */}
+                        {offlineQueue.length > 0 && (
+                            <div className="mb-6 bg-yellow-500/10 border border-yellow-500/30 rounded-lg p-3">
+                                <div className="text-yellow-400 text-sm font-bold flex items-center gap-2">
+                                    <Icon name="wifi-off" size={14} /> Offline Queue: {offlineQueue.length} pending
+                                </div>
+                                <p className="text-xs text-cyber-dim mt-1">These will auto-send when online.</p>
+                            </div>
+                        )}
 
                         <div className="flex justify-end">
                             <button onClick={onClose} className="bg-cyber-primary text-black font-bold py-2 px-6 rounded hover:bg-white transition-colors">
@@ -594,119 +1219,138 @@
             );
         };
 
-        const HistoryList = ({ isOpen, onClose, history, onDelete, onEdit, onDeleteAll, onDeleteMany }) => {
+        // --- History List (improved) ---
+        const HistoryList = ({ isOpen, onClose, history, onDelete, onEdit, onDeleteAll, onDeleteMany, settings, onExportCSV }) => {
             const [selectedIds, setSelectedIds] = useState([]);
+            const [locationFilter, setLocationFilter] = useState('');
 
-            // Reset selection when closing or history changes
             useEffect(() => {
                 if (!isOpen) setSelectedIds([]);
                 lucide.createIcons();
             }, [isOpen, history]);
+            useEffect(() => { lucide.createIcons(); });
 
-            useEffect(() => {
-                lucide.createIcons();
-            });
+            const capacity = settings.batteryCapacity || DEFAULT_BATTERY_CAPACITY;
+            const rate = settings.electricityRate || DEFAULT_ELECTRICITY_RATE;
 
-            const toggleSelect = (id) => {
-                setSelectedIds(prev =>
-                    prev.includes(id) ? prev.filter(pid => pid !== id) : [...prev, id]
-                );
-            };
+            const allLocations = useMemo(() => {
+                const locs = new Set();
+                history.forEach(h => { if (h.locationName) locs.add(h.locationName); });
+                return [...locs];
+            }, [history]);
 
+            const filteredHistory = useMemo(() => {
+                if (!locationFilter) return history;
+                return history.filter(h => h.locationName === locationFilter);
+            }, [history, locationFilter]);
+
+            const toggleSelect = (id) => setSelectedIds(prev => prev.includes(id) ? prev.filter(pid => pid !== id) : [...prev, id]);
             const handleSelectAll = () => {
-                if (selectedIds.length === history.length) {
-                    setSelectedIds([]);
-                } else {
-                    setSelectedIds(history.map(h => h.id));
-                }
+                if (selectedIds.length === filteredHistory.length) setSelectedIds([]);
+                else setSelectedIds(filteredHistory.map(h => h.id));
             };
-
-            const executeDeleteSelected = () => {
-                if (selectedIds.length > 0) {
-                    onDeleteMany(selectedIds);
-                    setSelectedIds([]);
-                }
-            };
+            const executeDeleteSelected = () => { if (selectedIds.length > 0) { onDeleteMany(selectedIds); setSelectedIds([]); } };
 
             if (!isOpen) return null;
             return (
                 <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center sm:p-4 bg-black/80 backdrop-blur-sm transition-all">
-                    <div className="glass-panel w-full sm:max-w-md h-[85vh] sm:h-auto sm:max-h-[85vh] rounded-t-2xl sm:rounded-2xl p-6 relative flex flex-col animate-slide-up">
-                        <div className="flex justify-between items-center mb-4">
+                    <div className="glass-panel w-full sm:max-w-md h-[85vh] sm:h-auto sm:max-h-[85vh] rounded-t-2xl sm:rounded-2xl p-6 relative flex flex-col">
+                        <div className="flex justify-between items-center mb-2">
                             <h2 className="text-xl font-display text-cyber-primary flex items-center gap-2">
                                 <Icon name="history" /> History
                             </h2>
-                            <div className="flex gap-2">
+                            <div className="flex gap-2 items-center">
+                                {history.length > 0 && (
+                                    <button onClick={onExportCSV} className="text-xs text-cyber-primary border border-cyber-primary px-2 py-1 rounded hover:bg-cyber-primary/10 flex items-center gap-1">
+                                        <Icon name="download" size={12} /> CSV
+                                    </button>
+                                )}
                                 {selectedIds.length > 0 ? (
                                     <button onClick={executeDeleteSelected} className="text-xs text-cyber-accent border border-cyber-accent px-2 py-1 rounded hover:bg-cyber-accent/10 flex items-center gap-1">
                                         <Icon name="trash-2" size={12} /> Delete ({selectedIds.length})
                                     </button>
                                 ) : (
                                     history.length > 0 && (
-                                        <button onClick={onDeleteAll} className="text-xs text-cyber-dim border border-cyber-dim px-2 py-1 rounded hover:bg-white/10">
-                                            Delete All
-                                        </button>
+                                        <button onClick={onDeleteAll} className="text-xs text-cyber-dim border border-cyber-dim px-2 py-1 rounded hover:bg-white/10">Delete All</button>
                                     )
                                 )}
-                                <button onClick={onClose} className="text-cyber-dim hover:text-white">
-                                    <Icon name="x" />
-                                </button>
+                                <button onClick={onClose} className="text-cyber-dim hover:text-white"><Icon name="x" /></button>
                             </div>
                         </div>
 
-                        {history.length > 0 && (
+                        {/* Location filter */}
+                        {allLocations.length > 0 && (
+                            <div className="mb-2">
+                                <select value={locationFilter} onChange={e => setLocationFilter(e.target.value)}
+                                    className="glass-input rounded p-1 text-xs w-full appearance-none">
+                                    <option value="">All Locations</option>
+                                    {allLocations.map(loc => <option key={loc} value={loc}>{loc}</option>)}
+                                </select>
+                            </div>
+                        )}
+
+                        {filteredHistory.length > 0 && (
                             <div className="flex items-center gap-2 mb-2 px-1">
-                                <input
-                                    type="checkbox"
-                                    checked={history.length > 0 && selectedIds.length === history.length}
-                                    onChange={handleSelectAll}
-                                    className="w-4 h-4 rounded border-cyber-dim bg-transparent accent-cyber-primary cursor-pointer"
-                                />
-                                <span className="text-xs text-cyber-dim">Select All</span>
+                                <input type="checkbox" checked={filteredHistory.length > 0 && selectedIds.length === filteredHistory.length}
+                                    onChange={handleSelectAll} className="w-4 h-4 rounded border-cyber-dim bg-transparent accent-cyber-primary cursor-pointer" />
+                                <span className="text-xs text-cyber-dim">Select All ({filteredHistory.length})</span>
                             </div>
                         )}
 
                         <div className="flex-1 overflow-y-auto cyber-scroll pr-2 space-y-3 pb-4">
-                            {history.length === 0 ? (
+                            {filteredHistory.length === 0 ? (
                                 <div className="text-center text-cyber-dim py-10">No records found.</div>
                             ) : (
-                                history.map(item => (
-                                    <div key={item.id} className={`bg-white/5 rounded-lg p-3 border-l-2 transition-colors ${selectedIds.includes(item.id) ? 'border-cyber-primary bg-cyber-primary/10' : 'border-cyber-dim'}`}>
-                                        <div className="flex justify-between items-start mb-2">
-                                            <div className="flex items-start gap-3">
-                                                <input
-                                                    type="checkbox"
-                                                    checked={selectedIds.includes(item.id)}
-                                                    onChange={() => toggleSelect(item.id)}
-                                                    className="mt-1 w-4 h-4 rounded border-cyber-dim bg-transparent accent-cyber-primary cursor-pointer"
-                                                />
-                                                <div>
-                                                    <div className="text-xs text-cyber-dim">{item.startTime ? formatDate(item.startTime) : formatDate(item.timestamp)}</div>
-                                                    <div className="flex items-baseline gap-2 mt-1">
-                                                        <span className="text-lg font-display text-white">{item.startRange || '-'} <Icon name="arrow-right" size={12} className="inline" /> {item.endRange || '-'}</span>
-                                                        <span className="text-xs text-cyber-dim">km</span>
-                                                    </div>
-                                                    <div className="text-sm font-tech text-white mt-1">
-                                                        Batt: {item.battery || item.startBattery}% <Icon name="arrow-right" size={12} className="inline" /> {item.batteryAfter || item.endBattery}%
-                                                    </div>
-                                                    {item.locationName && (
-                                                        <div className="text-xs text-cyber-primary mt-1 flex items-center gap-1">
-                                                            <Icon name="map-pin" size={10} /> {item.locationName}
+                                filteredHistory.map(item => {
+                                    const kwh = calcChargedKwh(capacity, item.startBattery || 0, item.endBattery || item.batteryAfter || 0);
+                                    const cost = calcCost(kwh, rate);
+                                    const duration = item.startTime && item.endTime ? calcDurationMinutes(item.startTime, item.endTime) : 0;
+                                    const speed = calcChargeSpeed(kwh, duration);
+                                    const badge = getChargeSpeedBadge(speed);
+
+                                    return (
+                                        <div key={item.id} className={`bg-white/5 rounded-lg p-3 border-l-2 transition-colors ${selectedIds.includes(item.id) ? 'border-cyber-primary bg-cyber-primary/10' : 'border-cyber-dim'}`}>
+                                            <div className="flex justify-between items-start mb-1">
+                                                <div className="flex items-start gap-3 flex-1 min-w-0">
+                                                    <input type="checkbox" checked={selectedIds.includes(item.id)} onChange={() => toggleSelect(item.id)}
+                                                        className="mt-1 w-4 h-4 rounded border-cyber-dim bg-transparent accent-cyber-primary cursor-pointer flex-shrink-0" />
+                                                    <div className="min-w-0">
+                                                        <div className="text-xs text-cyber-dim">{item.startTime ? formatDate(item.startTime) : formatDate(item.timestamp)}</div>
+                                                        <div className="flex items-baseline gap-2 mt-1">
+                                                            <span className="text-lg font-display text-white">{item.startRange || '-'} <Icon name="arrow-right" size={12} className="inline" /> {item.endRange || '-'}</span>
+                                                            <span className="text-xs text-cyber-dim">km</span>
                                                         </div>
-                                                    )}
+                                                        <div className="text-sm font-tech text-white mt-1">
+                                                            Batt: {item.battery || item.startBattery}% <Icon name="arrow-right" size={12} className="inline" /> {item.batteryAfter || item.endBattery}%
+                                                        </div>
+                                                        {/* New: kWh, Cost, Duration, Speed */}
+                                                        <div className="flex gap-3 mt-1 text-xs">
+                                                            <span className="text-cyber-primary">{kwh.toFixed(1)}kWh</span>
+                                                            <span className="text-cyber-success">&yen;{cost}</span>
+                                                            {duration > 0 && <span className="text-white">{formatDuration(duration)}</span>}
+                                                            {speed > 0 && (
+                                                                <span style={{ color: badge.color }}>{badge.emoji} {speed.toFixed(1)}kW</span>
+                                                            )}
+                                                        </div>
+                                                        {item.locationName && (
+                                                            <div className="text-xs text-cyber-primary mt-1 flex items-center gap-1">
+                                                                <Icon name="map-pin" size={10} /> {item.locationName}
+                                                            </div>
+                                                        )}
+                                                    </div>
+                                                </div>
+                                                <div className="flex gap-2 flex-shrink-0">
+                                                    <button onClick={() => onEdit(item)} className="h-10 w-10 flex items-center justify-center bg-cyber-primary text-black rounded font-bold hover:bg-white transition-colors shadow-[0_0_10px_rgba(0,240,255,0.3)]">
+                                                        <Icon name="edit-2" size={18} />
+                                                    </button>
+                                                    <button onClick={() => onDelete(item.id)} className="h-10 w-10 flex items-center justify-center bg-cyber-dark border border-cyber-accent text-cyber-accent rounded hover:bg-cyber-accent hover:text-white transition-colors">
+                                                        <Icon name="trash-2" size={18} />
+                                                    </button>
                                                 </div>
                                             </div>
-                                            <div className="flex gap-2">
-                                                <button onClick={() => onEdit(item)} className="h-10 w-10 flex items-center justify-center bg-cyber-primary text-black rounded font-bold hover:bg-white transition-colors shadow-[0_0_10px_rgba(0,240,255,0.3)]">
-                                                    <Icon name="edit-2" size={18} />
-                                                </button>
-                                                <button onClick={() => onDelete(item.id)} className="h-10 w-10 flex items-center justify-center bg-cyber-dark border border-cyber-accent text-cyber-accent rounded hover:bg-cyber-accent hover:text-white transition-colors">
-                                                    <Icon name="trash-2" size={18} />
-                                                </button>
-                                            </div>
                                         </div>
-                                    </div>
-                                ))
+                                    );
+                                })
                             )}
                         </div>
 
@@ -718,9 +1362,9 @@
             );
         };
 
+        // --- Edit Session Modal ---
         const EditSessionModal = ({ isOpen, onClose, item, onSave }) => {
             if (!isOpen || !item) return null;
-
             const [formData, setFormData] = useState({ ...item });
 
             useEffect(() => {
@@ -728,27 +1372,18 @@
                 setTimeout(() => lucide.createIcons(), 0);
             }, [item]);
 
-            const handleChange = (field, value) => {
-                setFormData(prev => ({ ...prev, [field]: value }));
-            };
-
-            const handleSave = () => {
-                onSave(formData);
-                onClose();
-            };
+            const handleChange = (field, value) => setFormData(prev => ({ ...prev, [field]: value }));
+            const handleSave = () => { onSave(formData); onClose(); };
 
             return (
                 <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/90 backdrop-blur-md">
                     <div className="glass-panel w-full max-w-md max-h-[90vh] overflow-y-auto rounded-2xl p-6 relative cyber-scroll">
-                        <button onClick={onClose} className="absolute top-4 right-4 text-cyber-dim hover:text-white">
-                            <Icon name="x" />
-                        </button>
+                        <button onClick={onClose} className="absolute top-4 right-4 text-cyber-dim hover:text-white"><Icon name="x" /></button>
                         <h2 className="text-xl font-display text-cyber-primary mb-6 flex items-center gap-2">
                             <Icon name="edit-2" /> Edit Session
                         </h2>
 
                         <div className="space-y-4">
-                            {/* Date Inputs - Stacked */}
                             <div className="mb-3">
                                 <label className="text-cyber-dim text-xs font-tech uppercase mb-1 block">Start</label>
                                 <input type="datetime-local" value={formData.startTime || formData.timestamp || ''} onChange={(e) => handleChange('startTime', e.target.value)} className="glass-input rounded p-2 text-sm w-full" />
@@ -757,8 +1392,6 @@
                                 <label className="text-cyber-dim text-xs font-tech uppercase mb-1 block">End</label>
                                 <input type="datetime-local" value={formData.endTime || ''} onChange={(e) => handleChange('endTime', e.target.value)} className="glass-input rounded p-2 text-sm w-full" />
                             </div>
-
-                            {/* Odometer - Compact */}
                             <div className="mb-3">
                                 <label className="text-cyber-dim text-xs font-tech uppercase mb-1 block">Odometer (km)</label>
                                 <div className="flex items-center gap-1 glass-input rounded p-2">
@@ -769,28 +1402,20 @@
                                     <button onClick={() => handleChange('odometer', Number(formData.odometer || 0) + 100)} className="cyber-btn h-8 w-12 flex items-center justify-center rounded bg-cyber-dark/50 text-cyber-primary text-xs font-bold">+100</button>
                                 </div>
                             </div>
-
                             <SmartNumberInput label="Efficiency" value={Number(formData.efficiency)} unit="km/kWh" steps={[-1, -0.1, 0.1, 1]} min={0} max={20} onChange={(v) => handleChange('efficiency', v)} />
-
                             <div className="p-3 border border-cyber-glassBorder rounded-lg bg-white/5">
                                 <div className="text-xs text-cyber-dim mb-2 uppercase tracking-widest">Start Conditions</div>
                                 <SmartNumberInput label="Batt %" value={Number(formData.startBattery || formData.battery || 0)} unit="%" onChange={(v) => handleChange('startBattery', v)} />
                                 <SmartNumberInput label="Range" value={Number(formData.startRange || 0)} unit="km" onChange={(v) => handleChange('startRange', v)} />
                             </div>
-
                             <div className="p-3 border border-cyber-glassBorder rounded-lg bg-white/5">
                                 <div className="text-xs text-cyber-dim mb-2 uppercase tracking-widest">End Conditions</div>
                                 <SmartNumberInput label="Batt %" value={Number(formData.endBattery || formData.batteryAfter || 0)} unit="%" onChange={(v) => handleChange('endBattery', v)} />
                                 <SmartNumberInput label="Range" value={Number(formData.endRange || 0)} unit="km" onChange={(v) => handleChange('endRange', v)} />
                             </div>
-
                             <div className="flex gap-2 mt-4">
-                                <button onClick={onClose} className="flex-1 py-3 bg-cyber-dark border border-cyber-dim text-cyber-dim font-bold rounded-xl uppercase tracking-widest hover:text-white hover:border-white transition-colors">
-                                    Cancel
-                                </button>
-                                <button onClick={handleSave} className="flex-[2] py-3 bg-cyber-primary text-black font-bold rounded-xl uppercase tracking-widest hover:bg-white transition-colors">
-                                    Save Changes
-                                </button>
+                                <button onClick={onClose} className="flex-1 py-3 bg-cyber-dark border border-cyber-dim text-cyber-dim font-bold rounded-xl uppercase tracking-widest hover:text-white hover:border-white transition-colors">Cancel</button>
+                                <button onClick={handleSave} className="flex-[2] py-3 bg-cyber-primary text-black font-bold rounded-xl uppercase tracking-widest hover:bg-white transition-colors">Save Changes</button>
                             </div>
                         </div>
                     </div>
@@ -800,9 +1425,10 @@
 
         // --- Main App ---
         const App = () => {
-            // State
             const [engine, setEngine] = useState(null);
-            const [chargingSession, setChargingSession] = useState(null); // Objects if active session exists
+            const [chargingSession, setChargingSession] = useState(null);
+            const [showOnboarding, setShowOnboarding] = useState(false);
+            const [completionRecord, setCompletionRecord] = useState(null);
 
             // Common inputs
             const [odometer, setOdometer] = useState(10000);
@@ -822,169 +1448,186 @@
             const [selectedLocationId, setSelectedLocationId] = useState("");
 
             const [history, setHistory] = useState([]);
-            const [gasUrl, setGasUrl] = useState(PRE_CONFIGURED_GAS_URL);
+            const [settings, setSettings] = useState({
+                gasUrl: PRE_CONFIGURED_GAS_URL,
+                batteryCapacity: DEFAULT_BATTERY_CAPACITY,
+                electricityRate: DEFAULT_ELECTRICITY_RATE,
+                nightRate: DEFAULT_NIGHT_RATE,
+                useNightRate: false,
+            });
+            const [offlineQueue, setOfflineQueue] = useState([]);
 
             const [showSettings, setShowSettings] = useState(false);
             const [showHistory, setShowHistory] = useState(false);
+            const [showStats, setShowStats] = useState(false);
             const [editingItem, setEditingItem] = useState(null);
             const [isSaving, setIsSaving] = useState(false);
+            const [validationErrors, setValidationErrors] = useState({});
 
             // Load from LocalStorage on mount
             useEffect(() => {
+                // Check onboarding
+                const onboardingDone = localStorage.getItem(STORAGE_KEY_ONBOARDING);
+                if (!onboardingDone) setShowOnboarding(true);
+
                 const savedSession = localStorage.getItem(STORAGE_KEY_SESSION);
-                const savedHistory = localStorage.getItem(STORAGE_KEY_DATA); // Corrected key from STORAGE_KEY_HISTORY to STORAGE_KEY_DATA
-                const savedGasUrl = localStorage.getItem(STORAGE_KEY_SETTINGS); // Corrected key from STORAGE_KEY_GAS_URL to STORAGE_KEY_SETTINGS
+                const savedHistory = localStorage.getItem(STORAGE_KEY_DATA);
+                const savedSettings = localStorage.getItem(STORAGE_KEY_SETTINGS);
                 const savedLocations = localStorage.getItem(STORAGE_KEY_LOCATIONS);
+                const savedQueue = localStorage.getItem(STORAGE_KEY_QUEUE);
 
                 if (savedSession) {
-                    try {
-                        setChargingSession(JSON.parse(savedSession));
-                    } catch (e) { console.error('Failed to parse session', e); }
+                    try { setChargingSession(JSON.parse(savedSession)); } catch (e) { console.error('Failed to parse session', e); }
                 }
                 if (savedHistory) {
-                    try {
-                        setHistory(JSON.parse(savedHistory));
-                    } catch (e) { console.error('Failed to parse history', e); }
+                    try { setHistory(JSON.parse(savedHistory)); } catch (e) { console.error('Failed to parse history', e); }
                 }
-                if (savedGasUrl) { // Check if savedGasUrl exists before parsing as JSON
+                if (savedSettings) {
                     try {
-                        const parsedSettings = JSON.parse(savedGasUrl);
-                        setGasUrl(parsedSettings.gasUrl || PRE_CONFIGURED_GAS_URL);
+                        const parsed = JSON.parse(savedSettings);
+                        // Migration: old format had just { gasUrl }
+                        if (parsed.gasUrl && !parsed.batteryCapacity) {
+                            setSettings(prev => ({ ...prev, gasUrl: parsed.gasUrl }));
+                        } else {
+                            setSettings(prev => ({ ...prev, ...parsed }));
+                        }
                     } catch (e) { console.error('Failed to parse settings', e); }
                 }
                 if (savedLocations) {
-                    try {
-                        setLocations(JSON.parse(savedLocations));
-                    } catch (e) { console.error('Failed to parse locations', e); }
+                    try { setLocations(JSON.parse(savedLocations)); } catch (e) { console.error('Failed to parse locations', e); }
+                }
+                if (savedQueue) {
+                    try { setOfflineQueue(JSON.parse(savedQueue)); } catch (e) { console.error('Failed to parse queue', e); }
                 }
             }, []);
 
-            // Spawn physics blocks for START phase values (immediate)
+            // Hydrate end form defaults based on session
             useEffect(() => {
-                if (!engine || chargingSession) return;
-                const text = `${startBattery}%`;
-                const color = getRandomColor();
-                const x = Math.random() * window.innerWidth;
-                const block = Bodies.rectangle(x, -50, 60, 40, {
-                    restitution: 0.6,
-                    friction: 0.3,
-                    render: { fillStyle: color }
-                });
-                block.label = text;
-                World.add(engine.world, block);
-            }, [startBattery, engine, chargingSession]);
-
-            useEffect(() => {
-                if (!engine || chargingSession) return;
-                const text = `${startRange}km`;
-                const color = getRandomColor();
-                const x = Math.random() * window.innerWidth;
-                const block = Bodies.rectangle(x, -50, 70, 40, {
-                    restitution: 0.6,
-                    friction: 0.3,
-                    render: { fillStyle: color }
-                });
-                block.label = text;
-                World.add(engine.world, block);
-            }, [startRange, engine, chargingSession]);
-
-            useEffect(() => {
-                if (!engine || chargingSession) return;
-                const text = `${odometer}km`;
-                const color = getRandomColor();
-                const x = Math.random() * window.innerWidth;
-                const block = Bodies.rectangle(x, -50, 80, 40, {
-                    restitution: 0.6,
-                    friction: 0.3,
-                    render: { fillStyle: color }
-                });
-                block.label = text;
-                World.add(engine.world, block);
-            }, [odometer, engine, chargingSession]);
-
-            // Spawn physics blocks for END phase values (immediate)
-            useEffect(() => {
-                if (!engine || !chargingSession) return;
-                const text = `${endBattery}%`;
-                const color = getRandomColor();
-                const x = Math.random() * window.innerWidth;
-                const block = Bodies.rectangle(x, -50, 60, 40, {
-                    restitution: 0.6,
-                    friction: 0.3,
-                    render: { fillStyle: color }
-                });
-                block.label = text;
-                World.add(engine.world, block);
-            }, [endBattery, engine, chargingSession]);
-
-            useEffect(() => {
-                if (!engine || !chargingSession) return;
-                const text = `${endRange}km`;
-                const color = getRandomColor();
-                const x = Math.random() * window.innerWidth;
-                const block = Bodies.rectangle(x, -50, 70, 40, {
-                    restitution: 0.6,
-                    friction: 0.3,
-                    render: { fillStyle: color }
-                });
-                block.label = text;
-                World.add(engine.world, block);
-            }, [endRange, engine, chargingSession]);
-            // Load Data & Session (Original block, partially replaced by the new useEffect above)
-            useEffect(() => {
-                // The new useEffect above handles most of the initial loading.
-                // This block now only handles the logic for hydrating End Form defaults
-                // and inheriting Odometer if no session.
-                const savedData = localStorage.getItem(STORAGE_KEY_DATA); // Re-fetch savedData for odometer logic
-                const savedSession = localStorage.getItem(STORAGE_KEY_SESSION); // Re-fetch savedSession for end form defaults
+                const savedSession = localStorage.getItem(STORAGE_KEY_SESSION);
+                const savedData = localStorage.getItem(STORAGE_KEY_DATA);
 
                 if (savedSession) {
                     const session = JSON.parse(savedSession);
-                    // Hydrate End Form defaults based on session
-                    setEndBattery(Math.min(session.startBattery + 20, 100)); // Guess +20%
-                    setEndRange(session.startRange + 50); // Guess +50km
-                    setEndTime(getLocalISOString()); // Current time
+                    setEndBattery(Math.min(session.startBattery + 20, 100));
+                    setEndRange(session.startRange + 50);
+                    setEndTime(getLocalISOString());
                 } else {
-                    // If no session, try to inherit Odometer from history
                     if (savedData) {
                         const parsed = JSON.parse(savedData);
                         if (parsed.length > 0) setOdometer(parsed[0].odometer);
                     }
                 }
-
                 lucide.createIcons();
             }, []);
 
-            // Save Locations
+            // Save settings
+            useEffect(() => {
+                localStorage.setItem(STORAGE_KEY_SETTINGS, JSON.stringify(settings));
+            }, [settings]);
+
+            // Save locations
             useEffect(() => {
                 localStorage.setItem(STORAGE_KEY_LOCATIONS, JSON.stringify(locations));
             }, [locations]);
 
-            // Physics Spawner
+            // Save offline queue
+            useEffect(() => {
+                localStorage.setItem(STORAGE_KEY_QUEUE, JSON.stringify(offlineQueue));
+            }, [offlineQueue]);
+
+            // Online/offline queue retry
+            useEffect(() => {
+                const retryQueue = async () => {
+                    if (offlineQueue.length === 0 || !navigator.onLine) return;
+                    const gasUrl = settings.gasUrl;
+                    if (!gasUrl) return;
+
+                    const remaining = [];
+                    for (const item of offlineQueue) {
+                        try {
+                            await fetch(gasUrl, {
+                                method: 'POST', mode: 'no-cors',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify(item)
+                            });
+                        } catch (e) {
+                            remaining.push(item);
+                        }
+                    }
+                    setOfflineQueue(remaining);
+                    if (remaining.length < offlineQueue.length) {
+                        showToast(`${offlineQueue.length - remaining.length} queued items sent`, 'success');
+                    }
+                };
+
+                window.addEventListener('online', retryQueue);
+                // Also try on mount
+                retryQueue();
+                return () => window.removeEventListener('online', retryQueue);
+            }, [offlineQueue, settings.gasUrl]);
+
+            // Physics block spawners for Start phase
+            useEffect(() => {
+                if (!engine || chargingSession) return;
+                const block = Bodies.rectangle(Math.random() * window.innerWidth, -50, 60, 40, {
+                    restitution: 0.6, friction: 0.3, render: { fillStyle: getRandomColor() }
+                });
+                block.label = `${startBattery}%`;
+                World.add(engine.world, block);
+            }, [startBattery, engine, chargingSession]);
+
+            useEffect(() => {
+                if (!engine || chargingSession) return;
+                const block = Bodies.rectangle(Math.random() * window.innerWidth, -50, 70, 40, {
+                    restitution: 0.6, friction: 0.3, render: { fillStyle: getRandomColor() }
+                });
+                block.label = `${startRange}km`;
+                World.add(engine.world, block);
+            }, [startRange, engine, chargingSession]);
+
+            useEffect(() => {
+                if (!engine || chargingSession) return;
+                const block = Bodies.rectangle(Math.random() * window.innerWidth, -50, 80, 40, {
+                    restitution: 0.6, friction: 0.3, render: { fillStyle: getRandomColor() }
+                });
+                block.label = `${odometer}km`;
+                World.add(engine.world, block);
+            }, [odometer, engine, chargingSession]);
+
+            // Physics block spawners for End phase
+            useEffect(() => {
+                if (!engine || !chargingSession) return;
+                const block = Bodies.rectangle(Math.random() * window.innerWidth, -50, 60, 40, {
+                    restitution: 0.6, friction: 0.3, render: { fillStyle: getRandomColor() }
+                });
+                block.label = `${endBattery}%`;
+                World.add(engine.world, block);
+            }, [endBattery, engine, chargingSession]);
+
+            useEffect(() => {
+                if (!engine || !chargingSession) return;
+                const block = Bodies.rectangle(Math.random() * window.innerWidth, -50, 70, 40, {
+                    restitution: 0.6, friction: 0.3, render: { fillStyle: getRandomColor() }
+                });
+                block.label = `${endRange}km`;
+                World.add(engine.world, block);
+            }, [endRange, engine, chargingSession]);
+
+            // Physics spawner helper
             const spawnDataBlock = (data) => {
                 if (!engine) return;
-                const width = 60;
-                const height = 60;
-                const x = Math.random() * (window.innerWidth - 100) + 50;
-                const y = -100;
-                const body = Bodies.rectangle(x, y, width, height, {
-                    restitution: 0.8,
-                    friction: 0.005,
-                    density: 0.04,
+                const body = Bodies.rectangle(
+                    Math.random() * (window.innerWidth - 100) + 50, -100, 60, 60, {
+                    restitution: 0.8, friction: 0.005, density: 0.04,
                     chamfer: { radius: 10 },
-                    render: {
-                        fillStyle: getRandomColor(),
-                        strokeStyle: '#ffffff',
-                        lineWidth: 2,
-                        opacity: 0.9
-                    }
+                    render: { fillStyle: getRandomColor(), strokeStyle: '#ffffff', lineWidth: 2, opacity: 0.9 }
                 });
                 Body.setVelocity(body, { x: (Math.random() - 0.5) * 5, y: 5 });
                 Body.setAngularVelocity(body, (Math.random() - 0.5) * 0.2);
                 World.add(engine.world, body);
             };
 
-            // Initial Physics Population
+            // Initial physics population
             const hasSpawnedRef = useRef(false);
             useEffect(() => {
                 if (engine && history.length > 0 && !hasSpawnedRef.current) {
@@ -995,23 +1638,39 @@
                 }
             }, [engine, history]);
 
-            useEffect(() => {
-                localStorage.setItem(STORAGE_KEY_SETTINGS, JSON.stringify({ gasUrl }));
-            }, [gasUrl]);
+            // --- Validation ---
+            const validateCompletion = () => {
+                const errors = {};
+                if (chargingSession) {
+                    if (endBattery < chargingSession.startBattery) {
+                        errors.endBattery = true;
+                        showToast('End battery must be >= start battery', 'error');
+                    }
+                    if (endRange < chargingSession.startRange) {
+                        errors.endRange = true;
+                        showToast('End range must be >= start range', 'error');
+                    }
+                    if (new Date(endTime) <= new Date(chargingSession.startTime)) {
+                        errors.endTime = true;
+                        showToast('End time must be after start time', 'error');
+                    }
+                    const durationHours = (new Date(endTime) - new Date(chargingSession.startTime)) / 3600000;
+                    if (durationHours > MAX_CHARGE_HOURS) {
+                        errors.endTime = true;
+                        showToast(`Charge duration exceeds ${MAX_CHARGE_HOURS}h`, 'error');
+                    }
+                }
+                setValidationErrors(errors);
+                return Object.keys(errors).length === 0;
+            };
 
             // --- Handlers ---
-
-            // Phase 1: Start Charging
             const handleStartCharging = () => {
                 const loc = locations.find(l => l.id === selectedLocationId) || {};
                 const session = {
                     id: generateId(),
-                    startTime,
-                    odometer, // Locked at start
-                    startBattery,
-                    startRange,
-                    efficiency,
-                    startedAt: Date.now(), // For failsafes
+                    startTime, odometer, startBattery, startRange, efficiency,
+                    startedAt: Date.now(),
                     locationName: loc.name || "",
                     voltage: loc.voltage || "",
                     amperage: loc.amperage || "",
@@ -1019,22 +1678,29 @@
                 };
                 setChargingSession(session);
                 localStorage.setItem(STORAGE_KEY_SESSION, JSON.stringify(session));
-
-                // Set defaults for End phase for convenience
                 setEndBattery(100);
                 setEndRange(100);
                 setEndTime(getLocalISOString());
+                setValidationErrors({});
             };
 
-            // Phase 2: Complete Charging
             const handleCompleteCharging = async () => {
+                if (!validateCompletion()) return;
                 setIsSaving(true);
+
+                const capacity = settings.batteryCapacity || DEFAULT_BATTERY_CAPACITY;
+                const rate = settings.electricityRate || DEFAULT_ELECTRICITY_RATE;
+                const chargedKwh = calcChargedKwh(capacity, chargingSession.startBattery, endBattery);
+                const cost = calcCost(chargedKwh, rate);
+                const duration = calcDurationMinutes(chargingSession.startTime, endTime);
+                const chargeSpeed = calcChargeSpeed(chargedKwh, duration);
 
                 const finalRecord = {
                     ...chargingSession,
-                    endTime,
-                    endBattery,
-                    endRange
+                    endTime, endBattery, endRange,
+                    chargedKwh: parseFloat(chargedKwh.toFixed(1)),
+                    cost, duration: Math.round(duration),
+                    chargeSpeed: parseFloat(chargeSpeed.toFixed(1)),
                 };
 
                 // Save to History
@@ -1049,42 +1715,57 @@
                 // Initialize next start defaults
                 setStartBattery(endBattery);
                 setStartRange(endRange);
-                setOdometer(finalRecord.odometer); // Odometer shouldn't change during charging, so it stays same
-                setStartTime(getLocalISOString()); // Reset start time to now
+                setOdometer(finalRecord.odometer);
+                setStartTime(getLocalISOString());
+                setValidationErrors({});
 
-                // Physics Reward
-                spawnDataBlock(finalRecord);
+                // Physics Reward (enhanced: spawn 15 blocks)
+                for (let i = 0; i < 15; i++) {
+                    setTimeout(() => spawnDataBlock(finalRecord), i * 80);
+                }
+
+                // Show completion summary
+                setCompletionRecord(finalRecord);
 
                 // Send to GAS
+                const gasUrl = settings.gasUrl;
                 if (gasUrl) {
-                    try {
-                        const payload = {
-                            startTime: finalRecord.startTime || "",
-                            endTime: finalRecord.endTime || "",
-                            odometer: String(finalRecord.odometer || ""),
-                            efficiency: String(finalRecord.efficiency || ""),
-                            startBattery: String(finalRecord.startBattery || ""),
-                            endBattery: String(finalRecord.endBattery || ""),
-                            startRange: String(finalRecord.startRange || ""),
-                            endRange: String(finalRecord.endRange || ""),
-                            locationName: String(finalRecord.locationName || ""),
-                            voltage: String(finalRecord.voltage || ""),
-                            amperage: String(finalRecord.amperage || ""),
-                            kw: String(finalRecord.kw || "")
-                        };
+                    const payload = {
+                        startTime: finalRecord.startTime || "",
+                        endTime: finalRecord.endTime || "",
+                        odometer: String(finalRecord.odometer || ""),
+                        efficiency: String(finalRecord.efficiency || ""),
+                        startBattery: String(finalRecord.startBattery || ""),
+                        endBattery: String(finalRecord.endBattery || ""),
+                        startRange: String(finalRecord.startRange || ""),
+                        endRange: String(finalRecord.endRange || ""),
+                        locationName: String(finalRecord.locationName || ""),
+                        voltage: String(finalRecord.voltage || ""),
+                        amperage: String(finalRecord.amperage || ""),
+                        kw: String(finalRecord.kw || ""),
+                        chargedKwh: String(finalRecord.chargedKwh || ""),
+                        cost: String(finalRecord.cost || ""),
+                        duration: String(finalRecord.duration || ""),
+                        chargeSpeed: String(finalRecord.chargeSpeed || ""),
+                    };
 
-                        // Fallback to simpler JSON if needed, but trying no-cors with JSON
+                    try {
                         await fetch(gasUrl, {
-                            method: 'POST',
-                            mode: 'no-cors',
+                            method: 'POST', mode: 'no-cors',
                             headers: { 'Content-Type': 'application/json' },
                             body: JSON.stringify(payload)
                         });
-                        console.log("Sent formatted data to GAS", payload);
+                        showToast('Data saved & sent to Google Sheets', 'success');
                     } catch (e) {
                         console.error("GAS Error", e);
+                        // Queue for offline retry
+                        setOfflineQueue(prev => [...prev, payload]);
+                        showToast('Saved locally. Queued for sync when online.', 'info');
                     }
+                } else {
+                    showToast('Charge session saved', 'success');
                 }
+
                 setTimeout(() => setIsSaving(false), 500);
             };
 
@@ -1122,7 +1803,21 @@
                 if (confirm("Cancel current charging session?")) {
                     setChargingSession(null);
                     localStorage.removeItem(STORAGE_KEY_SESSION);
+                    setValidationErrors({});
                 }
+            };
+
+            const handleOnboardingComplete = (vehicleSettings) => {
+                setShowOnboarding(false);
+                setSettings(prev => ({
+                    ...prev,
+                    batteryCapacity: vehicleSettings.batteryCapacity,
+                    electricityRate: vehicleSettings.electricityRate,
+                    nightRate: vehicleSettings.nightRate,
+                    useNightRate: vehicleSettings.useNightRate,
+                    gasUrl: vehicleSettings.gasUrl,
+                }));
+                showToast('Welcome! Settings saved.', 'success');
             };
 
             return (
@@ -1137,6 +1832,9 @@
                                 EV<span className="text-cyber-primary">GRAVITY</span>
                             </h1>
                             <div className="flex gap-2">
+                                <button onClick={() => setShowStats(true)} className="glass-panel p-2 rounded-full text-cyber-primary hover:bg-white/10 transition">
+                                    <Icon name="bar-chart-3" />
+                                </button>
                                 <button onClick={() => setShowHistory(true)} className="glass-panel p-2 rounded-full text-cyber-primary hover:bg-white/10 transition">
                                     <Icon name="history" />
                                 </button>
@@ -1146,154 +1844,70 @@
                             </div>
                         </header>
 
-                        {/* Main Form Area - Scrollable */}
+                        {/* Main Form Area */}
                         <main className="p-2 w-full max-w-md mx-auto pointer-events-auto overflow-y-auto pb-18" style={{ maxHeight: 'calc(100dvh - 100px)' }}>
-                            <div className="glass-panel rounded-2xl p-4 border-t border-cyber-glassBorder backdrop-blur-xl bg-black/40 shadow-2xl animate-fade-in-up">
 
-                                {/* CASE 1: IDLE (Start Charging) */}
-                                {!chargingSession && (
-                                    <>
-                                        <div className="flex items-center gap-2 mb-1 text-cyber-primary">
-                                            <Icon name="plug-zap" />
-                                            <h2 className="text-lg font-display">START CHARGING</h2>
-                                        </div>
+                            {/* CASE 1: IDLE (Start Charging) */}
+                            {!chargingSession && (
+                                <div className="glass-panel rounded-2xl p-4 border-t border-cyber-glassBorder backdrop-blur-xl bg-black/40 shadow-2xl">
+                                    <div className="flex items-center gap-2 mb-1 text-cyber-primary">
+                                        <Icon name="plug-zap" />
+                                        <h2 className="text-lg font-display">START CHARGING</h2>
+                                    </div>
 
-                                        <DateTimeInput
-                                            label="Start Time"
-                                            value={startTime}
-                                            onChange={setStartTime}
-                                        />
+                                    <DateTimeInput label="Start Time" value={startTime} onChange={setStartTime} />
+                                    <Odometer value={odometer} onChange={setOdometer} />
 
-                                        <Odometer value={odometer} onChange={setOdometer} />
+                                    <div className="flex flex-col gap-2">
+                                        <SmartNumberInput label="Battery (%)" value={startBattery} unit="%" min={0} max={100} onChange={setStartBattery} />
+                                        <SmartNumberInput label="Range (km)" value={startRange} unit="km" steps={[-10, -1, 1, 10]} min={0} max={1000} onChange={setStartRange} />
+                                    </div>
 
-                                        <div className="flex flex-col gap-2">
-                                            <SmartNumberInput
-                                                label="Battery (%)"
-                                                value={startBattery}
-                                                unit="%"
-                                                min={0} max={100}
-                                                onChange={setStartBattery}
-                                            />
-                                            <SmartNumberInput
-                                                label="Range (km)"
-                                                value={startRange}
-                                                unit="km"
-                                                steps={[-10, -1, 1, 10]}
-                                                min={0} max={1000}
-                                                onChange={setStartRange}
-                                            />
-                                        </div>
+                                    <SmartNumberInput label="Efficiency (km/kWh)" value={efficiency} unit="" steps={[-1, -0.1, 0.1, 1]} min={0} max={20} onChange={setEfficiency} />
 
-                                        <SmartNumberInput
-                                            label="Efficiency (km/kWh)"
-                                            value={efficiency}
-                                            unit=""
-                                            steps={[-1, -0.1, 0.1, 1]}
-                                            min={0} max={20}
-                                            onChange={setEfficiency}
-                                        />
-
-                                        {/* Location Selector */}
-                                        <div className="mb-2">
-                                            <label className="text-cyber-dim text-xs font-tech uppercase tracking-wider pl-1 font-bold flex items-center gap-2">
-                                                <Icon name="map-pin" size={12} /> Charging Location
-                                            </label>
-                                            <div className="relative">
-                                                <select
-                                                    value={selectedLocationId}
-                                                    onChange={(e) => setSelectedLocationId(e.target.value)}
-                                                    className="w-full glass-input rounded-lg p-3 text-cyber-primary appearance-none focus:outline-none bg-black/50"
-                                                >
-                                                    <option value="">-- Manual / Unspecified --</option>
-                                                    {locations.map(loc => (
-                                                        <option key={loc.id} value={loc.id}>{loc.name} ({loc.kw}kW)</option>
-                                                    ))}
-                                                </select>
-                                                <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-cyber-primary">
-                                                    <Icon name="chevron-down" size={16} />
-                                                </div>
+                                    {/* Location Selector */}
+                                    <div className="mb-2">
+                                        <label className="text-cyber-dim text-xs font-tech uppercase tracking-wider pl-1 font-bold flex items-center gap-2">
+                                            <Icon name="map-pin" size={12} /> Charging Location
+                                        </label>
+                                        <div className="relative">
+                                            <select value={selectedLocationId} onChange={(e) => setSelectedLocationId(e.target.value)}
+                                                className="w-full glass-input rounded-lg p-3 text-cyber-primary appearance-none focus:outline-none bg-black/50">
+                                                <option value="">-- Manual / Unspecified --</option>
+                                                {locations.map(loc => (
+                                                    <option key={loc.id} value={loc.id}>{loc.name} ({loc.kw}kW)</option>
+                                                ))}
+                                            </select>
+                                            <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-cyber-primary">
+                                                <Icon name="chevron-down" size={16} />
                                             </div>
                                         </div>
+                                    </div>
 
-                                        <button
-                                            onClick={handleStartCharging}
-                                            className="w-full mt-4 py-4 rounded-xl font-display font-bold text-xl tracking-widest uppercase bg-gradient-to-r from-cyber-secondary to-cyber-accent text-white shadow-lg hover:shadow-cyber-accent/50 transition-all transform active:scale-95"
-                                        >
-                                            START CHARGING
-                                        </button>
-                                    </>
-                                )}
+                                    <button onClick={handleStartCharging}
+                                        className="w-full mt-4 py-4 rounded-xl font-display font-bold text-xl tracking-widest uppercase bg-gradient-to-r from-cyber-secondary to-cyber-accent text-white shadow-lg hover:shadow-cyber-accent/50 transition-all transform active:scale-95">
+                                        START CHARGING
+                                    </button>
+                                </div>
+                            )}
 
-                                {/* CASE 2: ACTIVE (Finish Charging) */}
-                                {chargingSession && (
-                                    <>
-                                        <div className="flex justify-between items-start mb-6">
-                                            <div className="flex items-center gap-2 text-cyber-accent animate-pulse">
-                                                <Icon name="battery-charging" />
-                                                <h2 className="text-lg font-display">CHARGING IN PROGRESS...</h2>
-                                            </div>
-                                            <button onClick={handleCancelSession} className="text-xs text-cyber-dim underline hover:text-white">Cancel</button>
-                                        </div>
-
-                                        <div className="bg-white/5 rounded-lg p-3 mb-6 border border-cyber-glassBorder">
-                                            <div className="text-xs text-cyber-dim uppercase">Started At</div>
-                                            <div className="text-white font-mono">{formatDate(chargingSession.startTime)}</div>
-                                            <div className="flex justify-between mt-2">
-                                                <div>
-                                                    <div className="text-xs text-cyber-dim">Batt</div>
-                                                    <div className="text-cyber-primary font-display">{chargingSession.startBattery}%</div>
-                                                </div>
-                                                <div>
-                                                    <div className="text-xs text-cyber-dim">Range</div>
-                                                    <div className="text-cyber-primary font-display">{chargingSession.startRange}km</div>
-                                                </div>
-                                                <div>
-                                                    <div className="text-xs text-cyber-dim">Odo</div>
-                                                    <div className="text-cyber-primary font-display">{chargingSession.odometer}km</div>
-                                                </div>
-                                            </div>
-                                        </div>
-
-                                        <DateTimeInput
-                                            label="End Time"
-                                            value={endTime}
-                                            onChange={setEndTime}
-                                        />
-
-                                        <div className="flex flex-col gap-2">
-                                            <SmartNumberInput
-                                                label="Battery (End)"
-                                                value={endBattery}
-                                                unit="%"
-                                                min={0} max={100}
-                                                onChange={setEndBattery}
-                                            />
-                                            <SmartNumberInput
-                                                label="Range (End)"
-                                                value={endRange}
-                                                unit="km"
-                                                steps={[-10, -1, 1, 10]}
-                                                min={0} max={1000}
-                                                onChange={setEndRange}
-                                            />
-                                        </div>
-
-                                        <button
-                                            onClick={handleCompleteCharging}
-                                            disabled={isSaving}
-                                            className={`w-full mt-4 py-4 rounded-xl font-display font-bold text-xl tracking-widest uppercase transition-all transform active:scale-95
-                                                ${isSaving
-                                                    ? 'bg-cyber-primary text-black shadow-[0_0_30px_#00f0ff]'
-                                                    : 'bg-cyber-primary text-black shadow-lg hover:shadow-cyber-primary/50'
-                                                }
-                                            `}
-                                        >
-                                            {isSaving ? 'SAVING...' : 'COMPLETE & SAVE'}
-                                        </button>
-                                    </>
-                                )}
-
-                            </div>
+                            {/* CASE 2: ACTIVE (Live Charging Screen) */}
+                            {chargingSession && (
+                                <LiveChargingScreen
+                                    session={chargingSession}
+                                    settings={settings}
+                                    endTime={endTime}
+                                    setEndTime={setEndTime}
+                                    endBattery={endBattery}
+                                    setEndBattery={setEndBattery}
+                                    endRange={endRange}
+                                    setEndRange={setEndRange}
+                                    onComplete={handleCompleteCharging}
+                                    onCancel={handleCancelSession}
+                                    isSaving={isSaving}
+                                    validationErrors={validationErrors}
+                                />
+                            )}
                         </main>
                     </div>
 
@@ -1301,10 +1915,11 @@
                     <SettingsModal
                         isOpen={showSettings}
                         onClose={() => setShowSettings(false)}
-                        gasUrl={gasUrl}
-                        setGasUrl={setGasUrl}
+                        settings={settings}
+                        setSettings={setSettings}
                         locations={locations}
                         setLocations={setLocations}
+                        offlineQueue={offlineQueue}
                     />
 
                     <HistoryList
@@ -1315,6 +1930,8 @@
                         onDeleteAll={handleDeleteAll}
                         onDeleteMany={handleDeleteMany}
                         onEdit={setEditingItem}
+                        settings={settings}
+                        onExportCSV={() => exportCSV(history, settings)}
                     />
 
                     <EditSessionModal
@@ -1323,14 +1940,39 @@
                         item={editingItem}
                         onSave={handleUpdateSession}
                     />
+
+                    <StatsDashboard
+                        isOpen={showStats}
+                        onClose={() => setShowStats(false)}
+                        history={history}
+                        settings={settings}
+                    />
+
+                    {/* Completion Summary Overlay */}
+                    {completionRecord && (
+                        <CompletionSummary
+                            record={completionRecord}
+                            settings={settings}
+                            onDismiss={() => setCompletionRecord(null)}
+                        />
+                    )}
+
+                    {/* Onboarding */}
+                    {showOnboarding && (
+                        <Onboarding
+                            onComplete={handleOnboardingComplete}
+                            setVehicleSettings={() => {}}
+                        />
+                    )}
+
+                    {/* Toast Container */}
+                    <ToastContainer />
                 </>
             );
         };
 
         const root = ReactDOM.createRoot(document.getElementById('root'));
         root.render(<App />);
-
-        // Lucide icons re-init for dynamic content if needed, mostly handled in component
     </script>
 <script>
 if ('serviceWorker' in navigator) {
