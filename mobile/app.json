@@ -33,6 +33,13 @@
       "expo-router",
       "expo-font",
       "@react-native-community/datetimepicker"
-    ]
+    ],
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "49ef124c-9d7b-4608-863f-4caded30f839"
+      }
+    },
+    "owner": "yamaga101"
   }
 }
