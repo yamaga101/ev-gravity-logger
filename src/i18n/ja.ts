@@ -1,6 +1,6 @@
-import type { TranslationKey } from "./en.ts";
+import type { TranslationMap } from "./en.ts";
 
-export const ja: Record<TranslationKey, string> = {
+export const ja: TranslationMap = {
   startCharging: "充電開始",
   charging: "充電中...",
   completeAndSave: "完了して保存",

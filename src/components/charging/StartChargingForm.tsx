@@ -4,7 +4,6 @@ import { SmartNumberInput } from "../inputs/SmartNumberInput.tsx";
 import { DateTimeInput } from "../inputs/DateTimeInput.tsx";
 import { Odometer } from "../inputs/Odometer.tsx";
 import { useChargingStore } from "../../store/useChargingStore.ts";
-import { useSettingsStore } from "../../store/useSettingsStore.ts";
 import { useLocationStore } from "../../store/useLocationStore.ts";
 import { generateId, getLocalISOString } from "../../utils/formatting.ts";
 import type { Translations } from "../../i18n/index.ts";

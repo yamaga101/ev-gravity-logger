@@ -121,6 +121,7 @@ export const en = {
   dark: "Dark",
   systemDefault: "System Default",
   language: "Language",
-} as const;
+};
 
 export type TranslationKey = keyof typeof en;
+export type TranslationMap = Record<TranslationKey, string>;

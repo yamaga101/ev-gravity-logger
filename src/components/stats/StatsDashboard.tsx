@@ -110,6 +110,50 @@ export function StatsDashboard({ t }: StatsDashboardProps) {
       .map(([name, count]) => ({ name: name.slice(0, 10), count }));
   }, [filteredHistory]);
 
+  // Monthly cost data
+  const monthlyCostData = useMemo(() => {
+    const monthMap: Record<string, number> = {};
+    filteredHistory.forEach((h) => {
+      const d = new Date(h.startTime || h.timestamp || "");
+      const key = `${d.getFullYear()}-${(d.getMonth() + 1).toString().padStart(2, "0")}`;
+      const kwh = calcChargedKwh(
+        capacity,
+        h.startBattery || 0,
+        h.endBattery || h.batteryAfter || 0,
+      );
+      monthMap[key] = (monthMap[key] || 0) + calcCost(kwh, rate);
+    });
+    return Object.entries(monthMap)
+      .sort((a, b) => a[0].localeCompare(b[0]))
+      .slice(-6)
+      .map(([month, cost]) => ({ month: month.slice(5), cost }));
+  }, [filteredHistory, capacity, rate]);
+
+  // Location detailed stats
+  const locationDetailData = useMemo(() => {
+    const locMap: Record<
+      string,
+      { count: number; totalDuration: number; totalCost: number }
+    > = {};
+    filteredHistory.forEach((h) => {
+      const name = h.locationName || "Unknown";
+      if (!locMap[name]) locMap[name] = { count: 0, totalDuration: 0, totalCost: 0 };
+      locMap[name].count++;
+      locMap[name].totalDuration += h.duration || 0;
+      const kwh = calcChargedKwh(capacity, h.startBattery || 0, h.endBattery || h.batteryAfter || 0);
+      locMap[name].totalCost += calcCost(kwh, rate);
+    });
+    return Object.entries(locMap)
+      .sort((a, b) => b[1].count - a[1].count)
+      .slice(0, 5)
+      .map(([name, data]) => ({
+        name: name.slice(0, 12),
+        count: data.count,
+        avgDuration: data.count > 0 ? Math.round(data.totalDuration / data.count) : 0,
+        avgCost: data.count > 0 ? Math.round(data.totalCost / data.count) : 0,
+      }));
+  }, [filteredHistory, capacity, rate]);
+
   return (
     <div className="h-full overflow-y-auto custom-scroll pb-4">
       {/* Period filter */}

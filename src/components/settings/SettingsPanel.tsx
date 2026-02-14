@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 import {
   Car,
   MapPin,
@@ -10,11 +10,15 @@ import {
   Sun,
   Moon,
   Monitor,
+  Download,
+  Upload,
 } from "lucide-react";
 import { useSettingsStore } from "../../store/useSettingsStore.ts";
 import { useLocationStore } from "../../store/useLocationStore.ts";
 import { useChargingStore } from "../../store/useChargingStore.ts";
+import { useToastStore } from "../../store/useToastStore.ts";
 import { VEHICLE_PRESETS } from "../../constants/defaults.ts";
+import { exportJson, importJson } from "../../utils/json-io.ts";
 import type { ChargingLocation, Theme } from "../../types/index.ts";
 import type { Translations } from "../../i18n/index.ts";
 
@@ -35,7 +39,11 @@ export function SettingsPanel({ t }: SettingsPanelProps) {
   const updateLocation = useLocationStore((s) => s.updateLocation);
   const removeLocation = useLocationStore((s) => s.removeLocation);
 
+  const history = useChargingStore((s) => s.history);
+  const importRecords = useChargingStore((s) => s.importRecords);
   const offlineQueue = useChargingStore((s) => s.offlineQueue);
+  const showToast = useToastStore((s) => s.showToast);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const [newLoc, setNewLoc] = useState<Omit<ChargingLocation, "id">>({
     name: "",
@@ -321,6 +329,60 @@ export function SettingsPanel({ t }: SettingsPanelProps) {
           onChange={(e) => updateSettings({ gasUrl: e.target.value })}
           placeholder="https://script.google.com/..."
           className="w-full rounded-lg border border-border dark:border-dark-border bg-white dark:bg-dark-surface p-3 text-sm text-text-primary dark:text-dark-text focus:outline-none focus:border-ev-primary"
+        />
+      </section>
+
+      {/* JSON Import/Export */}
+      <section>
+        <h3 className="text-sm font-semibold text-text-primary dark:text-dark-text mb-3 flex items-center gap-2">
+          <Download size={16} /> {t.jsonExport} / {t.jsonImport}
+        </h3>
+        <div className="flex gap-2">
+          <button
+            onClick={() => {
+              exportJson(history, locations, settings);
+              showToast(t.jsonExportSuccess, "success");
+            }}
+            className="flex-1 flex items-center justify-center gap-2 py-2 rounded-xl border border-ev-primary text-ev-primary text-sm font-medium hover:bg-ev-primary/5 transition-colors"
+          >
+            <Download size={14} /> {t.jsonExport}
+          </button>
+          <button
+            onClick={() => fileInputRef.current?.click()}
+            className="flex-1 flex items-center justify-center gap-2 py-2 rounded-xl border border-ev-secondary text-ev-secondary text-sm font-medium hover:bg-ev-secondary/5 transition-colors"
+          >
+            <Upload size={14} /> {t.jsonImport}
+          </button>
+        </div>
+        <input
+          ref={fileInputRef}
+          type="file"
+          accept=".json"
+          className="hidden"
+          onChange={async (e) => {
+            const file = e.target.files?.[0];
+            if (!file) return;
+            try {
+              const data = await importJson(file);
+              const imported = importRecords(data.history);
+              showToast(
+                t.jsonImportSuccess.replace("{n}", String(imported)),
+                "success",
+              );
+              if (data.history.length - imported > 0) {
+                showToast(
+                  t.jsonImportSkipped.replace(
+                    "{n}",
+                    String(data.history.length - imported),
+                  ),
+                  "info",
+                );
+              }
+            } catch {
+              showToast(t.jsonImportError, "error");
+            }
+            e.target.value = "";
+          }}
         />
       </section>
 
