@@ -1,0 +1,278 @@
+import { useState, useEffect } from "react";
+import { BatteryCharging, MapPin } from "lucide-react";
+import { ProgressRing } from "../ui/ProgressRing.tsx";
+import { SmartNumberInput } from "../inputs/SmartNumberInput.tsx";
+import { DateTimeInput } from "../inputs/DateTimeInput.tsx";
+import { useChargingStore } from "../../store/useChargingStore.ts";
+import { useSettingsStore } from "../../store/useSettingsStore.ts";
+import { useToastStore } from "../../store/useToastStore.ts";
+import {
+  calcChargedKwh,
+  calcCost,
+  calcDurationMinutes,
+  calcChargeSpeed,
+} from "../../utils/calculations.ts";
+import { buildGasPayload, sendToGas } from "../../utils/gas-sync.ts";
+import {
+  formatTimer,
+  formatDate,
+  getLocalISOString,
+} from "../../utils/formatting.ts";
+import {
+  DEFAULT_BATTERY_CAPACITY,
+  DEFAULT_ELECTRICITY_RATE,
+  MAX_CHARGE_HOURS,
+} from "../../constants/defaults.ts";
+import type { Translations } from "../../i18n/index.ts";
+import type { ChargingRecord } from "../../types/index.ts";
+
+interface LiveChargingScreenProps {
+  t: Translations;
+  onComplete: (record: ChargingRecord) => void;
+}
+
+export function LiveChargingScreen({ t, onComplete }: LiveChargingScreenProps) {
+  const session = useChargingStore((s) => s.activeSession)!;
+  const addRecord = useChargingStore((s) => s.addRecord);
+  const clearSession = useChargingStore((s) => s.clearSession);
+  const addToQueue = useChargingStore((s) => s.addToQueue);
+  const settings = useSettingsStore((s) => s.settings);
+  const showToast = useToastStore((s) => s.showToast);
+
+  const [elapsed, setElapsed] = useState(0);
+  const [endTime, setEndTime] = useState(getLocalISOString());
+  const [endBattery, setEndBattery] = useState(
+    Math.min(session.startBattery + 20, 100),
+  );
+  const [endRange, setEndRange] = useState(session.startRange + 50);
+  const [isSaving, setIsSaving] = useState(false);
+  const [validationErrors, setValidationErrors] = useState<
+    Record<string, boolean>
+  >({});
+
+  useEffect(() => {
+    const startMs = new Date(session.startTime).getTime();
+    const tick = () => setElapsed(Math.floor((Date.now() - startMs) / 1000));
+    tick();
+    const id = setInterval(tick, 1000);
+    return () => clearInterval(id);
+  }, [session.startTime]);
+
+  const capacity = settings.batteryCapacity || DEFAULT_BATTERY_CAPACITY;
+  const rate = settings.electricityRate || DEFAULT_ELECTRICITY_RATE;
+  const locationKw = (Number(session.kw) || 3);
+
+  // Live estimates
+  const remainPct = 100 - session.startBattery;
+  const remainKwh = (capacity * remainPct) / 100;
+  const estTotalMinutes =
+    locationKw > 0 ? (remainKwh / locationKw) * 60 : 0;
+  const estCompletionTime = new Date(
+    new Date(session.startTime).getTime() + estTotalMinutes * 60000,
+  );
+  const elapsedKwh = locationKw * (elapsed / 3600);
+  const liveCost = Math.round(elapsedKwh * rate);
+  const currentPct = Math.min(
+    100,
+    session.startBattery + (elapsedKwh / capacity) * 100,
+  );
+  const progress =
+    remainPct > 0
+      ? Math.min(
+          100,
+          ((currentPct - session.startBattery) / remainPct) * 100,
+        )
+      : 100;
+
+  const validate = (): boolean => {
+    const errors: Record<string, boolean> = {};
+    if (endBattery < session.startBattery) {
+      errors.endBattery = true;
+      showToast(t.valEndBattery, "error");
+    }
+    if (endRange < session.startRange) {
+      errors.endRange = true;
+      showToast(t.valEndRange, "error");
+    }
+    if (new Date(endTime) <= new Date(session.startTime)) {
+      errors.endTime = true;
+      showToast(t.valEndTime, "error");
+    }
+    const durationHours =
+      (new Date(endTime).getTime() - new Date(session.startTime).getTime()) /
+      3600000;
+    if (durationHours > MAX_CHARGE_HOURS) {
+      errors.endTime = true;
+      showToast(t.valDuration.replace("{n}", String(MAX_CHARGE_HOURS)), "error");
+    }
+    setValidationErrors(errors);
+    return Object.keys(errors).length === 0;
+  };
+
+  const handleComplete = async () => {
+    if (!validate()) return;
+    setIsSaving(true);
+
+    const chargedKwh = calcChargedKwh(capacity, session.startBattery, endBattery);
+    const cost = calcCost(chargedKwh, rate);
+    const duration = calcDurationMinutes(session.startTime, endTime);
+    const chargeSpeed = calcChargeSpeed(chargedKwh, duration);
+
+    const finalRecord: ChargingRecord = {
+      ...session,
+      endTime,
+      endBattery,
+      endRange,
+      chargedKwh: parseFloat(chargedKwh.toFixed(1)),
+      cost,
+      duration: Math.round(duration),
+      chargeSpeed: parseFloat(chargeSpeed.toFixed(1)),
+    };
+
+    addRecord(finalRecord);
+    clearSession();
+
+    // Send to GAS
+    const gasUrl = settings.gasUrl;
+    if (gasUrl) {
+      const payload = buildGasPayload(finalRecord);
+      const success = await sendToGas(gasUrl, payload);
+      if (success) {
+        showToast(t.toastSavedSent, "success");
+      } else {
+        addToQueue(payload);
+        showToast(t.toastSavedQueued, "info");
+      }
+    } else {
+      showToast(t.toastSessionSaved, "success");
+    }
+
+    setIsSaving(false);
+    onComplete(finalRecord);
+  };
+
+  const handleCancel = () => {
+    if (confirm(t.confirmCancelSession)) {
+      clearSession();
+      setValidationErrors({});
+    }
+  };
+
+  return (
+    <div className="pulse-glow bg-white dark:bg-dark-surface rounded-2xl p-4 shadow-sm border border-ev-primary/20">
+      <div className="flex justify-between items-start mb-4">
+        <div className="flex items-center gap-2 text-ev-primary">
+          <BatteryCharging size={20} />
+          <h2 className="text-lg font-semibold animate-pulse">
+            {t.charging}
+          </h2>
+        </div>
+        <button
+          onClick={handleCancel}
+          className="text-xs text-text-muted underline hover:text-text-primary dark:hover:text-dark-text"
+        >
+          {t.cancel}
+        </button>
+      </div>
+
+      {/* Progress Ring + Timer */}
+      <div className="relative flex items-center justify-center mb-4">
+        <ProgressRing radius={70} stroke={6} progress={progress} />
+        <div className="absolute text-center">
+          <div className="text-3xl font-semibold text-ev-primary">
+            {formatTimer(elapsed)}
+          </div>
+          <div className="text-xs text-text-muted">{t.elapsed}</div>
+        </div>
+      </div>
+
+      {/* Live Stats Row */}
+      <div className="grid grid-cols-3 gap-2 mb-4">
+        <div className="bg-surface-alt dark:bg-gray-800 rounded-lg p-2 text-center">
+          <div className="text-xs text-text-muted">{t.estPct}</div>
+          <div className="text-xl font-semibold text-ev-primary">
+            {Math.round(currentPct)}%
+          </div>
+        </div>
+        <div className="bg-surface-alt dark:bg-gray-800 rounded-lg p-2 text-center">
+          <div className="text-xs text-text-muted">{t.cost}</div>
+          <div className="text-xl font-semibold text-ev-success">
+            &yen;{liveCost}
+          </div>
+        </div>
+        <div className="bg-surface-alt dark:bg-gray-800 rounded-lg p-2 text-center">
+          <div className="text-xs text-text-muted">{t.estDone}</div>
+          <div className="text-sm font-semibold text-text-primary dark:text-dark-text">
+            {estCompletionTime.getHours().toString().padStart(2, "0")}:
+            {estCompletionTime.getMinutes().toString().padStart(2, "0")}
+          </div>
+        </div>
+      </div>
+
+      {/* Session Info */}
+      <div className="bg-surface-alt dark:bg-gray-800 rounded-lg p-2 mb-4 text-xs">
+        <div className="flex justify-between text-text-muted">
+          <span>
+            {t.start}: {formatDate(session.startTime)}
+          </span>
+          <span>
+            {session.startBattery}% / {session.startRange}km
+          </span>
+        </div>
+        {session.locationName && (
+          <div className="text-ev-primary mt-1 flex items-center gap-1">
+            <MapPin size={10} /> {session.locationName} ({locationKw}kW)
+          </div>
+        )}
+      </div>
+
+      {/* End Inputs */}
+      <div className="space-y-2">
+        <DateTimeInput
+          label={t.endTime}
+          value={endTime}
+          onChange={setEndTime}
+          error={validationErrors.endTime}
+        />
+        <SmartNumberInput
+          label={t.battEnd}
+          value={endBattery}
+          unit="%"
+          min={0}
+          max={100}
+          onChange={setEndBattery}
+          error={validationErrors.endBattery}
+        />
+        <SmartNumberInput
+          label={t.rangeEnd}
+          value={endRange}
+          unit="km"
+          steps={[-10, -1, 1, 10]}
+          min={0}
+          max={1000}
+          onChange={setEndRange}
+          error={validationErrors.endRange}
+        />
+      </div>
+
+      <button
+        onClick={handleComplete}
+        disabled={isSaving}
+        className={`w-full mt-4 py-4 rounded-xl font-semibold text-lg tracking-wide transition-all active:scale-[0.98] ${
+          isSaving
+            ? "bg-ev-primary text-white shadow-lg"
+            : "bg-ev-primary text-white hover:bg-ev-primary-dark shadow-lg hover:shadow-ev-primary/30"
+        }`}
+      >
+        {isSaving ? (
+          <span>
+            <span className="spinner mr-2"></span>
+            {t.saving}
+          </span>
+        ) : (
+          t.completeAndSave
+        )}
+      </button>
+    </div>
+  );
+}
