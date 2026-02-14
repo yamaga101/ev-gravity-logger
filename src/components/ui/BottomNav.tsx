@@ -22,7 +22,7 @@ const tabs: { id: TabId; icon: typeof BatteryCharging; labelKey: keyof Translati
 
 export function BottomNav({ activeTab, onTabChange, t }: BottomNavProps) {
   return (
-    <nav className="fixed bottom-0 left-0 right-0 z-50 bg-white dark:bg-dark-surface border-t border-border dark:border-dark-border pb-safe">
+    <nav className="fixed bottom-0 left-0 right-0 z-50 bg-white dark:bg-dark-surface border-t border-border dark:border-dark-border pb-safe" aria-label="Main navigation" role="navigation">
       <div className="flex justify-around items-center h-14 max-w-lg mx-auto">
         {tabs.map(({ id, icon: Icon, labelKey }) => {
           const isActive = activeTab === id;
@@ -30,6 +30,8 @@ export function BottomNav({ activeTab, onTabChange, t }: BottomNavProps) {
             <button
               key={id}
               onClick={() => onTabChange(id)}
+              aria-label={t[labelKey]}
+              aria-current={isActive ? "page" : undefined}
               className={`flex flex-col items-center justify-center flex-1 h-full transition-colors ${
                 isActive
                   ? "text-ev-primary"

@@ -279,6 +279,57 @@ export function StatsDashboard({ t }: StatsDashboardProps) {
               </div>
             </div>
           )}
+
+          {/* Monthly Cost Chart */}
+          {monthlyCostData.length > 0 && (
+            <div className="mb-6">
+              <h3 className="text-sm font-semibold text-text-muted mb-2 uppercase">
+                {t.monthlyCost}
+              </h3>
+              <div className="bg-white dark:bg-dark-surface rounded-xl p-3 shadow-sm border border-border dark:border-dark-border">
+                <ResponsiveContainer width="100%" height={160}>
+                  <BarChart data={monthlyCostData}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="#E2E8F0" />
+                    <XAxis dataKey="month" tick={{ fontSize: 11 }} />
+                    <YAxis tick={{ fontSize: 11 }} />
+                    <Tooltip formatter={(value: number) => [`¥${Math.round(value)}`, t.cost]} />
+                    <Bar dataKey="cost" fill="#F59E0B" radius={[4, 4, 0, 0]} />
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
+            </div>
+          )}
+
+          {/* Location Detail Stats */}
+          {locationDetailData.length > 0 && (
+            <div className="mb-6">
+              <h3 className="text-sm font-semibold text-text-muted mb-2 uppercase">
+                {t.locationStats}
+              </h3>
+              <div className="bg-white dark:bg-dark-surface rounded-xl shadow-sm border border-border dark:border-dark-border overflow-hidden">
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="border-b border-border dark:border-dark-border bg-surface-alt dark:bg-gray-800/50">
+                      <th className="text-left p-2 text-text-muted font-medium">{t.chargingLocation}</th>
+                      <th className="text-right p-2 text-text-muted font-medium">{t.totalCharges}</th>
+                      <th className="text-right p-2 text-text-muted font-medium">{t.avgDuration}</th>
+                      <th className="text-right p-2 text-text-muted font-medium">{t.avgCost}</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {locationDetailData.map((loc) => (
+                      <tr key={loc.name} className="border-b border-border/50 dark:border-dark-border/50 last:border-0">
+                        <td className="p-2 text-text-primary dark:text-dark-text font-medium">{loc.name}</td>
+                        <td className="p-2 text-right text-text-primary dark:text-dark-text">{loc.count}</td>
+                        <td className="p-2 text-right text-text-muted">{loc.avgDuration}min</td>
+                        <td className="p-2 text-right text-ev-success">¥{loc.avgCost}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          )}
         </>
       )}
     </div>

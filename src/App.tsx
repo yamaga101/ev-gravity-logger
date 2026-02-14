@@ -1,12 +1,10 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, lazy, Suspense } from "react";
 import { BottomNav } from "./components/ui/BottomNav.tsx";
 import { ToastContainer } from "./components/ui/Toast.tsx";
+import { ErrorBoundary } from "./components/ui/ErrorBoundary.tsx";
 import { StartChargingForm } from "./components/charging/StartChargingForm.tsx";
 import { LiveChargingScreen } from "./components/charging/LiveChargingScreen.tsx";
 import { CompletionSummary } from "./components/charging/CompletionSummary.tsx";
-import { HistoryList } from "./components/history/HistoryList.tsx";
-import { StatsDashboard } from "./components/stats/StatsDashboard.tsx";
-import { SettingsPanel } from "./components/settings/SettingsPanel.tsx";
 import { Onboarding } from "./components/onboarding/Onboarding.tsx";
 import { useChargingStore } from "./store/useChargingStore.ts";
 import { useSettingsStore } from "./store/useSettingsStore.ts";
@@ -15,6 +13,10 @@ import { useServiceWorker } from "./hooks/useServiceWorker.ts";
 import { retryQueue } from "./utils/gas-sync.ts";
 import { getTranslations } from "./i18n/index.ts";
 import type { TabId, ChargingRecord } from "./types/index.ts";
+
+const HistoryList = lazy(() => import("./components/history/HistoryList.tsx").then((m) => ({ default: m.HistoryList })));
+const StatsDashboard = lazy(() => import("./components/stats/StatsDashboard.tsx").then((m) => ({ default: m.StatsDashboard })));
+const SettingsPanel = lazy(() => import("./components/settings/SettingsPanel.tsx").then((m) => ({ default: m.SettingsPanel })));
 
 export default function App() {
   const [activeTab, setActiveTab] = useState<TabId>("charging");
@@ -87,7 +89,7 @@ export default function App() {
   return (
     <div className="min-h-screen bg-surface-alt dark:bg-dark-bg text-text-primary dark:text-dark-text">
       {/* Header */}
-      <header className="sticky top-0 z-40 bg-white/80 dark:bg-dark-surface/80 backdrop-blur-md border-b border-border dark:border-dark-border px-4 py-3">
+      <header className="sticky top-0 z-40 bg-white/80 dark:bg-dark-surface/80 backdrop-blur-md border-b border-border dark:border-dark-border px-4 py-3" role="banner">
         <div className="max-w-lg mx-auto flex justify-between items-center">
           <h1 className="text-xl font-bold tracking-tight">
             EV<span className="text-ev-primary">Logger</span>
@@ -96,23 +98,27 @@ export default function App() {
       </header>
 
       {/* Main Content */}
-      <main className="max-w-lg mx-auto px-4 py-4 pb-20">
-        {activeTab === "charging" && (
-          <>
-            {activeSession ? (
-              <LiveChargingScreen
-                t={t}
-                onComplete={handleChargingComplete}
-              />
-            ) : (
-              <StartChargingForm t={t} />
-            )}
-          </>
-        )}
+      <main className="max-w-lg mx-auto px-4 py-4 pb-20" role="main">
+        <ErrorBoundary>
+          {activeTab === "charging" && (
+            <>
+              {activeSession ? (
+                <LiveChargingScreen
+                  t={t}
+                  onComplete={handleChargingComplete}
+                />
+              ) : (
+                <StartChargingForm t={t} />
+              )}
+            </>
+          )}
 
-        {activeTab === "history" && <HistoryList t={t} />}
-        {activeTab === "stats" && <StatsDashboard t={t} />}
-        {activeTab === "settings" && <SettingsPanel t={t} />}
+          <Suspense fallback={<div className="flex justify-center py-10"><div className="spinner" /></div>}>
+            {activeTab === "history" && <HistoryList t={t} />}
+            {activeTab === "stats" && <StatsDashboard t={t} />}
+            {activeTab === "settings" && <SettingsPanel t={t} />}
+          </Suspense>
+        </ErrorBoundary>
       </main>
 
       {/* Bottom Nav */}
