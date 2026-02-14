@@ -12,7 +12,7 @@ import type { TranslationMap } from "../../../shared/i18n/en";
 interface EditSessionModalProps {
   item: ChargingRecord | null;
   onClose: () => void;
-  t: Translations;
+  t: TranslationMap;
 }
 
 export function EditSessionModal({ item, onClose, t }: EditSessionModalProps) {

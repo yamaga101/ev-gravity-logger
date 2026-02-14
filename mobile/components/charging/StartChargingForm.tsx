@@ -8,10 +8,10 @@ import { useChargingStore } from "../../store/useChargingStore";
 import { useLocationStore } from "../../store/useLocationStore";
 import { generateId, getLocalISOString } from "../../../shared/utils/formatting";
 import { useAppTheme } from "../../hooks/useTheme";
-import type { Translations } from "../../../shared/i18n/en";
+import type { TranslationMap } from "../../../shared/i18n/en";
 
 interface StartChargingFormProps {
-  t: Translations;
+  t: TranslationMap;
 }
 
 export function StartChargingForm({ t }: StartChargingFormProps) {

@@ -25,7 +25,7 @@ import type { TranslationMap } from "../../../shared/i18n/en";
 const { width: SCREEN_WIDTH } = Dimensions.get("window");
 
 interface OnboardingProps {
-  t: Translations;
+  t: TranslationMap;
   onComplete: () => void;
 }
 

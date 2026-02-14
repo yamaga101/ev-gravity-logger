@@ -7,12 +7,12 @@ import { DEFAULT_BATTERY_CAPACITY, DEFAULT_ELECTRICITY_RATE } from "../../../sha
 import { useSettingsStore } from "../../store/useSettingsStore";
 import { useAppTheme } from "../../hooks/useTheme";
 import type { ChargingRecord } from "../../../shared/types";
-import type { Translations } from "../../../shared/i18n/en";
+import type { TranslationMap } from "../../../shared/i18n/en";
 
 interface CompletionSummaryProps {
   record: ChargingRecord;
   onDismiss: () => void;
-  t: Translations;
+  t: TranslationMap;
 }
 
 export function CompletionSummary({ record, onDismiss, t }: CompletionSummaryProps) {

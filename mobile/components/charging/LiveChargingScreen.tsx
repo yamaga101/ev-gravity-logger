@@ -27,11 +27,11 @@ import {
   DEFAULT_ELECTRICITY_RATE,
   MAX_CHARGE_HOURS,
 } from "../../../shared/constants/defaults";
-import type { Translations } from "../../../shared/i18n/en";
+import type { TranslationMap } from "../../../shared/i18n/en";
 import type { ChargingRecord } from "../../../shared/types";
 
 interface LiveChargingScreenProps {
-  t: Translations;
+  t: TranslationMap;
 }
 
 export function LiveChargingScreen({ t }: LiveChargingScreenProps) {

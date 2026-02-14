@@ -17,10 +17,10 @@ import { DEFAULT_BATTERY_CAPACITY, DEFAULT_ELECTRICITY_RATE } from "../../../sha
 import { useAppTheme } from "../../hooks/useTheme";
 import { EditSessionModal } from "./EditSessionModal";
 import type { ChargingRecord } from "../../../shared/types";
-import type { Translations } from "../../../shared/i18n/en";
+import type { TranslationMap } from "../../../shared/i18n/en";
 
 interface HistoryListProps {
-  t: Translations;
+  t: TranslationMap;
 }
 
 export function HistoryList({ t }: HistoryListProps) {

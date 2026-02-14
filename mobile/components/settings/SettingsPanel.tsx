@@ -12,7 +12,7 @@ import type { ChargingLocation, Theme } from "../../../shared/types";
 import type { TranslationMap } from "../../../shared/i18n/en";
 
 interface SettingsPanelProps {
-  t: Translations;
+  t: TranslationMap;
 }
 
 export function SettingsPanel({ t }: SettingsPanelProps) {

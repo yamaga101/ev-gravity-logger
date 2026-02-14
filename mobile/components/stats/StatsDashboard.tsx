@@ -9,7 +9,7 @@ import { useAppTheme } from "../../hooks/useTheme";
 import type { TranslationMap } from "../../../shared/i18n/en";
 
 interface StatsDashboardProps {
-  t: Translations;
+  t: TranslationMap;
 }
 
 type Period = "1M" | "3M" | "6M" | "ALL";
