@@ -1,57 +1,17 @@
-export const PRE_CONFIGURED_GAS_URL =
-  "https://script.google.com/macros/s/AKfycby6A4grTpYFeWSNAcmWwtqYqG7fVEThhYhXZz6qj4i-C4knWEVY3Ka8TOSnoUPpUUu4/exec";
-
-export const STORAGE_KEY_DATA = "ev_gravity_data_v1";
-export const STORAGE_KEY_SETTINGS = "ev_gravity_settings_v1";
-export const STORAGE_KEY_SESSION = "ev_gravity_session_v1";
-export const STORAGE_KEY_LOCATIONS = "ev_gravity_locations_v1";
-export const STORAGE_KEY_QUEUE = "ev_gravity_queue_v1";
-export const STORAGE_KEY_ONBOARDING = "ev_gravity_onboarding_done";
-export const STORAGE_KEY_LANG = "ev_gravity_lang";
-
-export const DEFAULT_BATTERY_CAPACITY = 30;
-export const DEFAULT_ELECTRICITY_RATE = 31;
-export const DEFAULT_NIGHT_RATE = 17.78;
-export const MAX_CHARGE_HOURS = 24;
-
-export const VEHICLE_PRESETS = [
-  { label: "Nissan Leaf 30kWh (AZE0)", capacity: 30 },
-  { label: "Nissan Leaf 40kWh (ZE1)", capacity: 40 },
-  { label: "Nissan Leaf 62kWh (ZE1e+)", capacity: 62 },
-  { label: "Nissan Sakura 20kWh", capacity: 20 },
-] as const;
-
-export const CSV_HEADERS = {
-  en: [
-    "Date",
-    "Start Time",
-    "End Time",
-    "Odometer",
-    "Start %",
-    "End %",
-    "Start Range",
-    "End Range",
-    "Charged kWh",
-    "Cost (JPY)",
-    "Duration",
-    "Charge Speed (kW)",
-    "Efficiency",
-    "Location",
-  ],
-  ja: [
-    "日時",
-    "開始時刻",
-    "終了時刻",
-    "走行距離",
-    "開始%",
-    "終了%",
-    "開始航続",
-    "終了航続",
-    "充電量kWh",
-    "コスト(円)",
-    "所要時間",
-    "充電速度(kW)",
-    "電費",
-    "場所",
-  ],
-} as const;
+// Re-export all shared constants
+export {
+  PRE_CONFIGURED_GAS_URL,
+  STORAGE_KEY_DATA,
+  STORAGE_KEY_SETTINGS,
+  STORAGE_KEY_SESSION,
+  STORAGE_KEY_LOCATIONS,
+  STORAGE_KEY_QUEUE,
+  STORAGE_KEY_ONBOARDING,
+  STORAGE_KEY_LANG,
+  DEFAULT_BATTERY_CAPACITY,
+  DEFAULT_ELECTRICITY_RATE,
+  DEFAULT_NIGHT_RATE,
+  MAX_CHARGE_HOURS,
+  VEHICLE_PRESETS,
+  CSV_HEADERS,
+} from "../../shared/constants/defaults.ts";
