@@ -7,7 +7,7 @@ import { DateTimeInput } from "../inputs/DateTimeInput";
 import { useChargingStore } from "../../store/useChargingStore";
 import { useAppTheme } from "../../hooks/useTheme";
 import type { ChargingRecord } from "../../../shared/types";
-import type { Translations } from "../../../shared/i18n/en";
+import type { TranslationMap } from "../../../shared/i18n/en";
 
 interface EditSessionModalProps {
   item: ChargingRecord | null;

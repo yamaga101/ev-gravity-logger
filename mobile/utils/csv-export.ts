@@ -1,4 +1,4 @@
-import * as FileSystem from "expo-file-system";
+import * as FileSystem from "expo-file-system/legacy";
 import * as Sharing from "expo-sharing";
 import { CSV_HEADERS, DEFAULT_BATTERY_CAPACITY, DEFAULT_ELECTRICITY_RATE } from "../../shared/constants/defaults";
 import type { ChargingRecord, VehicleSettings, Language } from "../../shared/types";
