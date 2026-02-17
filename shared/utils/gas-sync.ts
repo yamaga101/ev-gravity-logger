@@ -25,6 +25,11 @@ export async function sendToGas(
   gasUrl: string,
   payload: GasPayload,
 ): Promise<boolean> {
+  // Enforce HTTPS for security
+  if (!gasUrl.startsWith("https://")) {
+    throw new Error("GAS URL must use HTTPS protocol");
+  }
+
   try {
     await fetch(gasUrl, {
       method: "POST",
