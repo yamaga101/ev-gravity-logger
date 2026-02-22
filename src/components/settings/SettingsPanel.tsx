@@ -12,6 +12,7 @@ import {
   Monitor,
   Download,
   Upload,
+  ExternalLink,
 } from "lucide-react";
 import { useSettingsStore } from "../../store/useSettingsStore.ts";
 import { useLocationStore } from "../../store/useLocationStore.ts";
@@ -330,6 +331,14 @@ export function SettingsPanel({ t }: SettingsPanelProps) {
           placeholder="https://script.google.com/..."
           className="w-full rounded-lg border border-border dark:border-dark-border bg-white dark:bg-dark-surface p-3 text-sm text-text-primary dark:text-dark-text focus:outline-none focus:border-ev-primary"
         />
+        <a
+          href="https://docs.google.com/spreadsheets/d/1Cvn4oUoN7lsd5VW0MufgwSwrdNC-LE9VbPwZ2eG0cvA"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="mt-2 flex items-center justify-center gap-2 py-2 rounded-xl border border-ev-primary/50 text-ev-primary text-sm font-medium hover:bg-ev-primary/5 transition-colors"
+        >
+          <ExternalLink size={14} /> {t.openSpreadsheet}
+        </a>
       </section>
 
       {/* JSON Import/Export */}

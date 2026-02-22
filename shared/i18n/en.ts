@@ -120,6 +120,7 @@ export const en = {
   dark: "Dark",
   systemDefault: "System Default",
   language: "Language",
+  openSpreadsheet: "Open Spreadsheet",
 };
 
 export type TranslationKey = keyof typeof en;

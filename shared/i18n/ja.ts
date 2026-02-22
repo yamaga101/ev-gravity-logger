@@ -121,4 +121,5 @@ export const ja: TranslationMap = {
   dark: "ダーク",
   systemDefault: "システム設定",
   language: "言語",
+  openSpreadsheet: "スプレッドシートを開く",
 };
