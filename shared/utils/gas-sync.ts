@@ -31,13 +31,13 @@ export async function sendToGas(
   }
 
   try {
-    await fetch(gasUrl, {
+    const resp = await fetch(gasUrl, {
       method: "POST",
-      mode: "no-cors",
-      headers: { "Content-Type": "application/json" },
+      headers: { "Content-Type": "text/plain;charset=UTF-8" },
       body: JSON.stringify(payload),
+      redirect: "follow",
     });
-    return true;
+    return resp.ok;
   } catch {
     return false;
   }
