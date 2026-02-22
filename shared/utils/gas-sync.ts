@@ -2,22 +2,20 @@ import type { ChargingRecord, GasPayload } from "../types";
 
 export function buildGasPayload(record: ChargingRecord): GasPayload {
   return {
+    type: "charging",
+    id: record.id,
+    status: "completed",
     startTime: String(record.startTime || ""),
     endTime: String(record.endTime || ""),
-    odometer: String(record.odometer || ""),
+    startOdometer: String(record.odometer || ""),
     efficiency: String(record.efficiency || ""),
-    startBattery: String(record.startBattery || ""),
-    endBattery: String(record.endBattery || ""),
+    startSoC: String(record.startBattery || ""),
+    endSoC: String(record.endBattery || ""),
     startRange: String(record.startRange || ""),
     endRange: String(record.endRange || ""),
-    locationName: String(record.locationName || ""),
-    voltage: String(record.voltage || ""),
-    amperage: String(record.amperage || ""),
-    kw: String(record.kw || ""),
-    chargedKwh: String(record.chargedKwh || ""),
+    location: String(record.locationName || ""),
+    addedKwh: String(record.chargedKwh || ""),
     cost: String(record.cost || ""),
-    duration: String(record.duration || ""),
-    chargeSpeed: String(record.chargeSpeed || ""),
   };
 }
 

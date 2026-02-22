@@ -43,22 +43,20 @@ export interface VehicleSettings {
 }
 
 export interface GasPayload {
+  type: "charging";
+  id: string;
+  status: "completed";
   startTime: string;
   endTime: string;
-  odometer: string;
+  startOdometer: string;
   efficiency: string;
-  startBattery: string;
-  endBattery: string;
+  startSoC: string;
+  endSoC: string;
   startRange: string;
   endRange: string;
-  locationName: string;
-  voltage: string;
-  amperage: string;
-  kw: string;
-  chargedKwh: string;
+  location: string;
+  addedKwh: string;
   cost: string;
-  duration: string;
-  chargeSpeed: string;
 }
 
 export type Theme = "light" | "dark" | "system";
