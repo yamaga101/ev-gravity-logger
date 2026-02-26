@@ -122,4 +122,7 @@ export const ja: TranslationMap = {
   systemDefault: "システム設定",
   language: "言語",
   openSpreadsheet: "スプレッドシートを開く",
+  sohPct: "バッテリー健康度 (%)",
+  sohTrend: "バッテリー健康度推移 (SOH %)",
+  nightRateApplied: "深夜料金適用中",
 };

@@ -11,6 +11,7 @@ import {
   calcCost,
   calcDurationMinutes,
   calcChargeSpeed,
+  getAutoRate,
 } from "../../utils/calculations.ts";
 import { buildGasPayload, sendToGas } from "../../utils/gas-sync.ts";
 import {
@@ -59,7 +60,10 @@ export function LiveChargingScreen({ t, onComplete }: LiveChargingScreenProps) {
   }, [session.startTime]);
 
   const capacity = settings.batteryCapacity || DEFAULT_BATTERY_CAPACITY;
-  const rate = settings.electricityRate || DEFAULT_ELECTRICITY_RATE;
+  // Use night rate when session started during 22:00-08:00 and useNightRate is enabled
+  const rate = settings.useNightRate
+    ? getAutoRate(settings, session.startTime)
+    : (settings.electricityRate || DEFAULT_ELECTRICITY_RATE);
   const locationKw = (Number(session.kw) || 3);
 
   // Live estimates

@@ -129,6 +129,18 @@ export function StatsDashboard({ t }: StatsDashboardProps) {
       .map(([month, cost]) => ({ month: month.slice(5), cost }));
   }, [filteredHistory, capacity, rate]);
 
+  // SOH trend data (only records that have soh field)
+  const sohData = useMemo(() => {
+    return [...filteredHistory]
+      .reverse()
+      .filter((h) => h.soh !== undefined && h.soh !== null && h.soh > 0)
+      .slice(-20)
+      .map((h, i) => ({
+        index: i + 1,
+        soh: h.soh as number,
+      }));
+  }, [filteredHistory]);
+
   // Location detailed stats
   const locationDetailData = useMemo(() => {
     const locMap: Record<
@@ -249,6 +261,36 @@ export function StatsDashboard({ t }: StatsDashboardProps) {
                       stroke="#0EA5E9"
                       strokeWidth={2}
                       dot={{ fill: "#0EA5E9", r: 3 }}
+                    />
+                  </LineChart>
+                </ResponsiveContainer>
+              </div>
+            </div>
+          )}
+
+          {/* SOH Trend */}
+          {sohData.length >= 2 && (
+            <div className="mb-6">
+              <h3 className="text-sm font-semibold text-text-muted mb-2 uppercase">
+                {t.sohTrend}
+              </h3>
+              <div className="bg-white dark:bg-dark-surface rounded-xl p-3 shadow-sm border border-border dark:border-dark-border">
+                <ResponsiveContainer width="100%" height={120}>
+                  <LineChart data={sohData}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="#E2E8F0" />
+                    <XAxis dataKey="index" tick={{ fontSize: 11 }} />
+                    <YAxis
+                      domain={["dataMin - 2", "dataMax + 2"]}
+                      tick={{ fontSize: 11 }}
+                      unit="%"
+                    />
+                    <Tooltip formatter={(value: number) => [`${value}%`, "SOH"]} />
+                    <Line
+                      type="monotone"
+                      dataKey="soh"
+                      stroke="#8B5CF6"
+                      strokeWidth={2}
+                      dot={{ fill: "#8B5CF6", r: 3 }}
                     />
                   </LineChart>
                 </ResponsiveContainer>

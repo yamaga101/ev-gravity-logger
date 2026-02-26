@@ -5,4 +5,5 @@ export {
   calcDurationMinutes,
   calcChargeSpeed,
   getChargeSpeedBadge,
+  getAutoRate,
 } from "../../shared/utils/calculations.ts";

@@ -121,6 +121,9 @@ export const en = {
   systemDefault: "System Default",
   language: "Language",
   openSpreadsheet: "Open Spreadsheet",
+  sohPct: "Battery Health (%)",
+  sohTrend: "Battery Health Trend (SOH %)",
+  nightRateApplied: "Night rate applied",
 };
 
 export type TranslationKey = keyof typeof en;

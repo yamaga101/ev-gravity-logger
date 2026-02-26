@@ -1,10 +1,12 @@
-import { useState } from "react";
-import { PlugZap, MapPin, ChevronDown } from "lucide-react";
+import { useState, useCallback } from "react";
+import { PlugZap, MapPin, ChevronDown, Moon } from "lucide-react";
 import { SmartNumberInput } from "../inputs/SmartNumberInput.tsx";
 import { DateTimeInput } from "../inputs/DateTimeInput.tsx";
 import { Odometer } from "../inputs/Odometer.tsx";
 import { useChargingStore } from "../../store/useChargingStore.ts";
 import { useLocationStore } from "../../store/useLocationStore.ts";
+import { useSettingsStore } from "../../store/useSettingsStore.ts";
+import { getAutoRate } from "../../utils/calculations.ts";
 import { generateId, getLocalISOString } from "../../utils/formatting.ts";
 import type { Translations } from "../../i18n/index.ts";
 
@@ -16,6 +18,7 @@ export function StartChargingForm({ t }: StartChargingFormProps) {
   const history = useChargingStore((s) => s.history);
   const startSession = useChargingStore((s) => s.startSession);
   const locations = useLocationStore((s) => s.locations);
+  const settings = useSettingsStore((s) => s.settings);
 
   const lastRecord = history[0];
   const [startTime, setStartTime] = useState(getLocalISOString());
@@ -26,6 +29,30 @@ export function StartChargingForm({ t }: StartChargingFormProps) {
   const [startRange, setStartRange] = useState(lastRecord?.endRange ?? 200);
   const [efficiency, setEfficiency] = useState(lastRecord?.efficiency ?? 6.0);
   const [selectedLocationId, setSelectedLocationId] = useState("");
+
+  // Fix 1: determine if night rate applies based on the selected start time
+  const appliedRate = getAutoRate(settings, startTime);
+  const isNightRate =
+    settings.useNightRate && appliedRate === settings.nightRate;
+
+  // Fix 3: recalculate efficiency when odometer changes
+  const handleOdometerChange = useCallback(
+    (newOdometer: number) => {
+      setOdometer(newOdometer);
+      if (lastRecord?.odometer && lastRecord.odometer > 0) {
+        const distanceDriven = newOdometer - lastRecord.odometer;
+        if (distanceDriven > 0 && lastRecord.chargedKwh && lastRecord.chargedKwh > 0) {
+          const calculatedEfficiency = parseFloat(
+            (distanceDriven / lastRecord.chargedKwh).toFixed(1),
+          );
+          if (calculatedEfficiency > 0 && calculatedEfficiency < 30) {
+            setEfficiency(calculatedEfficiency);
+          }
+        }
+      }
+    },
+    [lastRecord],
+  );
 
   const handleStart = () => {
     const loc = locations.find((l) => l.id === selectedLocationId);
@@ -52,7 +79,13 @@ export function StartChargingForm({ t }: StartChargingFormProps) {
       </div>
 
       <DateTimeInput label={t.startTime} value={startTime} onChange={setStartTime} />
-      <Odometer value={odometer} onChange={setOdometer} label={t.odometer} />
+      {isNightRate && (
+        <div className="flex items-center gap-1 text-xs text-blue-600 dark:text-blue-400 mb-1 pl-1">
+          <Moon size={12} />
+          <span>{t.nightRateApplied} (¥{settings.nightRate}/kWh)</span>
+        </div>
+      )}
+      <Odometer value={odometer} onChange={handleOdometerChange} label={t.odometer} />
 
       <div className="flex flex-col gap-2">
         <SmartNumberInput

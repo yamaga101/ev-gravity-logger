@@ -1,4 +1,20 @@
-import type { ChargeSpeedBadge } from "../types";
+import type { ChargeSpeedBadge, VehicleSettings } from "../types";
+
+/**
+ * Returns the night rate if the given datetime (ISO string or Date) falls
+ * between 22:00 and 08:00 (local time), otherwise the regular rate.
+ * Falls back to the regular electricityRate when useNightRate is false.
+ */
+export function getAutoRate(
+  settings: Pick<VehicleSettings, "electricityRate" | "nightRate" | "useNightRate">,
+  startTime?: string | Date,
+): number {
+  if (!settings.useNightRate) return settings.electricityRate;
+  const date = startTime ? new Date(startTime) : new Date();
+  const hour = date.getHours();
+  const isNightHour = hour >= 22 || hour < 8;
+  return isNightHour ? settings.nightRate : settings.electricityRate;
+}
 
 export function calcChargedKwh(
   capacity: number,

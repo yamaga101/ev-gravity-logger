@@ -28,6 +28,8 @@ export interface ChargingRecord extends ChargingSession {
   cost: number;
   duration: number;
   chargeSpeed: number;
+  /** Battery State of Health percentage (optional, user-entered) */
+  soh?: number;
   // Legacy field names for migration compatibility
   timestamp?: string;
   battery?: number;
