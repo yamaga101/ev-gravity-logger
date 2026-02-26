@@ -44,7 +44,7 @@ export interface VehicleSettings {
   gasUrl: string;
 }
 
-export interface GasPayload {
+export interface ChargingGasPayload {
   type: "charging";
   id: string;
   status: "completed";
@@ -61,9 +61,70 @@ export interface GasPayload {
   cost: string;
 }
 
+export interface MaintenanceGasPayload {
+  type: "maintenance";
+  id: string;
+  date: string;
+  category: string;
+  description: string;
+  cost: string;
+  odometer: string;
+  nextDueDate: string;
+  memo: string;
+}
+
+export interface InspectionGasPayload {
+  type: "inspection";
+  id: string;
+  date: string;
+  inspectionType: string;
+  odometer: string;
+  cost: string;
+  soh: string;
+  nextDueDate: string;
+  findings: string;
+}
+
+export type GasPayload = ChargingGasPayload | MaintenanceGasPayload | InspectionGasPayload;
+
+export type MaintenanceCategory =
+  | "tire"        // タイヤ
+  | "brake"       // ブレーキ
+  | "wiper"       // ワイパー
+  | "battery12v"  // 12Vバッテリー
+  | "coolant"     // 冷却液
+  | "inspection"  // 車検・点検
+  | "wash"        // 洗車
+  | "other";      // その他
+
+export interface MaintenanceRecord {
+  id: string;
+  date: string;             // ISO date
+  category: MaintenanceCategory;
+  description: string;
+  cost: number;
+  odometer?: number;
+  nextDueDate?: string;     // next maintenance due
+  nextDueOdometer?: number;
+  memo?: string;
+  createdAt: string;
+}
+
+export interface InspectionRecord {
+  id: string;
+  date: string;
+  type: "shaken" | "12month" | "6month"; // 車検, 12ヶ月点検, 6ヶ月点検
+  soh?: number;             // Battery SOH at inspection
+  odometer: number;
+  cost: number;
+  nextDueDate: string;      // next inspection due
+  findings?: string;        // 所見
+  createdAt: string;
+}
+
 export type Theme = "light" | "dark" | "system";
 export type Language = "en" | "ja";
-export type TabId = "charging" | "history" | "stats" | "settings";
+export type TabId = "charging" | "history" | "stats" | "settings" | "maintenance";
 
 export interface ChargeSpeedBadge {
   emoji: string;

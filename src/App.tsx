@@ -17,6 +17,7 @@ import type { TabId, ChargingRecord } from "./types/index.ts";
 const HistoryList = lazy(() => import("./components/history/HistoryList.tsx").then((m) => ({ default: m.HistoryList })));
 const StatsDashboard = lazy(() => import("./components/stats/StatsDashboard.tsx").then((m) => ({ default: m.StatsDashboard })));
 const SettingsPanel = lazy(() => import("./components/settings/SettingsPanel.tsx").then((m) => ({ default: m.SettingsPanel })));
+const MaintenanceTab = lazy(() => import("./components/maintenance/MaintenanceTab.tsx").then((m) => ({ default: m.MaintenanceTab })));
 
 export default function App() {
   const [activeTab, setActiveTab] = useState<TabId>("charging");
@@ -116,6 +117,7 @@ export default function App() {
           <Suspense fallback={<div className="flex justify-center py-10"><div className="spinner" /></div>}>
             {activeTab === "history" && <HistoryList t={t} />}
             {activeTab === "stats" && <StatsDashboard t={t} />}
+            {activeTab === "maintenance" && <MaintenanceTab t={t} />}
             {activeTab === "settings" && <SettingsPanel t={t} />}
           </Suspense>
         </ErrorBoundary>

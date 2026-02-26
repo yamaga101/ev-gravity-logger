@@ -3,6 +3,7 @@ import {
   History,
   BarChart3,
   Settings,
+  Wrench,
 } from "lucide-react";
 import type { TabId } from "../../types/index.ts";
 import type { Translations } from "../../i18n/index.ts";
@@ -17,6 +18,7 @@ const tabs: { id: TabId; icon: typeof BatteryCharging; labelKey: keyof Translati
   { id: "charging", icon: BatteryCharging, labelKey: "startCharging" },
   { id: "history", icon: History, labelKey: "history" },
   { id: "stats", icon: BarChart3, labelKey: "statistics" },
+  { id: "maintenance", icon: Wrench, labelKey: "maintenance" },
   { id: "settings", icon: Settings, labelKey: "settings" },
 ];
 

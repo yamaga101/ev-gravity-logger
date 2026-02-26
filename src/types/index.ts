@@ -9,4 +9,7 @@ export type {
   Language,
   TabId,
   ChargeSpeedBadge,
+  MaintenanceCategory,
+  MaintenanceRecord,
+  InspectionRecord,
 } from "../../shared/types/index.ts";

@@ -1,4 +1,9 @@
-import type { ChargingRecord, GasPayload } from "../types";
+import type {
+  ChargingRecord,
+  GasPayload,
+  MaintenanceRecord,
+  InspectionRecord,
+} from "../types";
 
 export function buildGasPayload(record: ChargingRecord): GasPayload {
   return {
@@ -16,6 +21,34 @@ export function buildGasPayload(record: ChargingRecord): GasPayload {
     location: String(record.locationName || ""),
     addedKwh: String(record.chargedKwh || ""),
     cost: String(record.cost || ""),
+  };
+}
+
+export function buildMaintenanceGasPayload(record: MaintenanceRecord): GasPayload {
+  return {
+    type: "maintenance",
+    id: record.id,
+    date: String(record.date || ""),
+    category: String(record.category || ""),
+    description: String(record.description || ""),
+    cost: String(record.cost || ""),
+    odometer: String(record.odometer ?? ""),
+    nextDueDate: String(record.nextDueDate || ""),
+    memo: String(record.memo || ""),
+  };
+}
+
+export function buildInspectionGasPayload(record: InspectionRecord): GasPayload {
+  return {
+    type: "inspection",
+    id: record.id,
+    date: String(record.date || ""),
+    inspectionType: String(record.type || ""),
+    odometer: String(record.odometer || ""),
+    cost: String(record.cost || ""),
+    soh: String(record.soh ?? ""),
+    nextDueDate: String(record.nextDueDate || ""),
+    findings: String(record.findings || ""),
   };
 }
 
