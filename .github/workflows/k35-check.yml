@@ -1,0 +1,19 @@
+name: k35 carve-out check
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  check-no-k35:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Run check-no-k35.sh
+        run: |
+          chmod +x scripts/check-no-k35.sh
+          scripts/check-no-k35.sh

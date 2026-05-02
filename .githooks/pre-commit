@@ -1,0 +1,4 @@
+#!/bin/bash
+# pre-commit hook — ev-manager で k35 残骸を block (yamaga101 carve-out 例外3)。
+# scripts/check-no-k35.sh --staged を呼び出すだけ。
+"$(git rev-parse --show-toplevel)/scripts/check-no-k35.sh" --staged
