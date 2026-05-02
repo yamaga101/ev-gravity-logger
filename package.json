@@ -6,12 +6,21 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc -b && vite build",
+    "build:native": "tsc -b && vite build --base=./",
     "lint": "eslint .",
     "preview": "vite preview",
     "check-k35": "bash scripts/check-no-k35.sh",
-    "setup-hooks": "git config core.hooksPath .githooks && chmod +x .githooks/pre-commit scripts/check-no-k35.sh"
+    "setup-hooks": "git config core.hooksPath .githooks && chmod +x .githooks/pre-commit scripts/check-no-k35.sh",
+    "cap:init": "npx cap init 'EV Manager' jp.gmail.yamaga101.evmanager --web-dir=dist",
+    "cap:android:add": "npx cap add android",
+    "cap:sync": "npm run build:native && npx cap sync android",
+    "cap:open": "npx cap open android",
+    "cap:run": "npm run build:native && npx cap run android"
   },
   "dependencies": {
+    "@capacitor/android": "^7.0.0",
+    "@capacitor/core": "^7.0.0",
+    "@capacitor/preferences": "^7.0.0",
     "lucide-react": "^0.511.0",
     "react": "^19.2.0",
     "react-dom": "^19.2.0",
@@ -19,6 +28,7 @@
     "zustand": "^5.0.6"
   },
   "devDependencies": {
+    "@capacitor/cli": "^7.0.0",
     "@eslint/js": "^9.39.1",
     "@tailwindcss/vite": "^4.1.11",
     "@types/node": "^24.10.1",
