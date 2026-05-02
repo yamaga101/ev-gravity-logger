@@ -18,7 +18,7 @@
  *   driveLog     : id | date | departure | destination | distance | startOdometer | endOdometer | efficiency | purpose | memo
  */
 
-var GAS_VERSION = "4.7.0";
+var GAS_VERSION = "4.7.1";
 var SPREADSHEET_ID = "1HK8C4C1IeK9Lf0UvDweqIkksEv6Jyer3jx_UNRSlceA";
 var SHARED_TOKEN_PROPERTY = "EV_MANAGER_SHARED_TOKEN";
 var IDEMPOTENCY_PREFIX = "idem:";
@@ -34,6 +34,18 @@ var CHARGING_HEADERS = [
   "FileName", "TripMeter", "AC_OFF_Range",
   "ChargingState", "VehicleTime", "Memo",
 ];
+
+function doGet(e) {
+  return ContentService
+    .createTextOutput(JSON.stringify({
+      ok: true,
+      app: "EV Manager Sync",
+      version: GAS_VERSION,
+      now: Utilities.formatDate(new Date(), "Asia/Tokyo", "yyyy-MM-dd'T'HH:mm:ssXXX"),
+      hint: "POST JSON to this URL with shared token in payload.token",
+    }))
+    .setMimeType(ContentService.MimeType.JSON);
+}
 
 function doPost(e) {
   try {
@@ -52,7 +64,7 @@ function doPost(e) {
     ensureMaintenanceTriggers_();
 
     if (payload.type === "ping") {
-      return jsonResponse({ ok: true, type: "ping", version: GAS_VERSION, now: new Date().toISOString() });
+      return jsonResponse({ ok: true, type: "ping", version: GAS_VERSION, now: Utilities.formatDate(new Date(), "Asia/Tokyo", "yyyy-MM-dd'T'HH:mm:ssXXX") });
     }
 
     var lock = LockService.getScriptLock();
@@ -170,7 +182,7 @@ function writeCharging(p) {
   if (idExistsInColumn(sheet, 2, p.id)) return;
 
   sheet.appendRow([
-    new Date(),
+    Utilities.formatDate(new Date(), "Asia/Tokyo", "yyyy/MM/dd HH:mm:ss"),
     p.id,
     p.status || "",
     p.startTime || "",
