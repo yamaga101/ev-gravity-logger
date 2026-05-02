@@ -61,11 +61,12 @@ GAS 同期が機能しなくなる。LocalStorage（PWA）/ AsyncStorage 相当
 - 旧 SpreadsheetID: `1Cvn4oUoN7lsd5VW0MufgwSwrdNC-LE9VbPwZ2eG0cvA` (gas/Code.gs L22 hardcoded)
 - M-1〜M-4 完了後、M-5 で archive → 30日後削除
 
-### 新リソース (yamaga101 配下、M-1〜M-2 で構築)
-- 新 SpreadsheetID: `TBD` (M-2 で確定)
-- 新 Apps Script ID: `TBD` (M-1 で確定)
-- 新 Deployment ID: `TBD` (M-1 で確定)
-- **新 Web App exec URL**: `TBD` (M-1 で確定)
+### 新リソース (yamaga101 配下、2026-05-02 構築完了)
+- 新 SpreadsheetID: `1HK8C4C1IeK9Lf0UvDweqIkksEv6Jyer3jx_UNRSlceA`
+- 新 Apps Script ID: `1Zmz_57Yy0Pqs9FOpsm3e-1RdPacmlpo6asoPgbHdaEARMNm2aaO3Ucpy`
+- 新 Deployment ID: `AKfycbzvSN49XRzYNB0N6QUiIiBdkpvIaeMhHC1xPJHnEoA2rT4ytz4BwRHAjwcbD8_uT1uJ`
+- **新 Web App exec URL**: `https://script.google.com/macros/s/AKfycbzvSN49XRzYNB0N6QUiIiBdkpvIaeMhHC1xPJHnEoA2rT4ytz4BwRHAjwcbD8_uT1uJ/exec`
+- セットアップ方法: `clasp create --type sheets --title "EV Manager Sync"` → Code.gs / appsscript.json を更新 → `clasp push -f` → `clasp deploy --description ...` (yt-player と同じパターン)
 
 ### Deployment Runbook (M-1)
 1. yamaga101 で `clasp login` (`~/.clasprc.json` を chmod 600 に再設定)
