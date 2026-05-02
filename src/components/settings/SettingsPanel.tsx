@@ -23,6 +23,9 @@ import { useLocationStore } from "../../store/useLocationStore.ts";
 import { useChargingStore } from "../../store/useChargingStore.ts";
 import { useSyncStore } from "../../store/useSyncStore.ts";
 import { useToastStore } from "../../store/useToastStore.ts";
+import { useDriveLogStore } from "../../store/useDriveLogStore.ts";
+import { useMaintenanceStore } from "../../store/useMaintenanceStore.ts";
+import { useVehicleStore } from "../../store/useVehicleStore.ts";
 import {
   VEHICLE_PRESETS,
   SPREADSHEET_URL,
@@ -66,6 +69,19 @@ export function SettingsPanel({ t }: SettingsPanelProps) {
   const outbox = useSyncStore((s) => s.outbox);
   const showToast = useToastStore((s) => s.showToast);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const driveLog = useDriveLogStore((s) => s.records);
+  const addDriveLog = useDriveLogStore((s) => s.addRecord);
+  const maintenance = useMaintenanceStore((s) => s.maintenanceRecords);
+  const inspection = useMaintenanceStore((s) => s.inspectionRecords);
+  const addMaintenance = useMaintenanceStore((s) => s.addMaintenance);
+  const addInspection = useMaintenanceStore((s) => s.addInspection);
+  const registration = useVehicleStore((s) => s.registration);
+  const setRegistration = useVehicleStore((s) => s.setRegistration);
+  const insurance = useVehicleStore((s) => s.insuranceRecords);
+  const tax = useVehicleStore((s) => s.taxRecords);
+  const addInsurance = useVehicleStore((s) => s.addInsurance);
+  const addTax = useVehicleStore((s) => s.addTax);
 
   const [newLoc, setNewLoc] = useState<Omit<ChargingLocation, "id">>(DEFAULT_LOCATION_DRAFT);
   const [editingLocId, setEditingLocId] = useState<string | null>(null);
@@ -508,7 +524,17 @@ export function SettingsPanel({ t }: SettingsPanelProps) {
         <div className="flex gap-2">
           <button
             onClick={() => {
-              exportJson(history, locations, settings);
+              exportJson({
+                history,
+                locations,
+                settings,
+                driveLog,
+                maintenance,
+                inspection,
+                registration,
+                insurance,
+                tax,
+              });
               showToast(t.jsonExportSuccess, "success");
             }}
             className="flex-1 btn-neon flex items-center justify-center gap-2 py-2 rounded-xl text-sm"
@@ -533,8 +559,21 @@ export function SettingsPanel({ t }: SettingsPanelProps) {
             try {
               const data = await importJson(file);
               const imported = importRecords(data.history);
+              data.driveLog.forEach((r) => addDriveLog(r));
+              data.maintenance.forEach((r) => addMaintenance(r));
+              data.inspection.forEach((r) => addInspection(r));
+              if (data.registration) setRegistration(data.registration);
+              data.insurance.forEach((r) => addInsurance(r));
+              data.tax.forEach((r) => addTax(r));
+              const extraCount =
+                data.driveLog.length +
+                data.maintenance.length +
+                data.inspection.length +
+                data.insurance.length +
+                data.tax.length +
+                (data.registration ? 1 : 0);
               showToast(
-                t.jsonImportSuccess.replace("{n}", String(imported)),
+                t.jsonImportSuccess.replace("{n}", String(imported + extraCount)),
                 "success",
               );
               if (data.history.length - imported > 0) {
