@@ -1,0 +1,358 @@
+/* ============================================================
+   EV Manager — Canvas styles
+   Layered on top of design-canvas.jsx defaults.
+   ============================================================ */
+
+/* ---------- Canvas backdrop tone ---------- */
+html, body, #root { background: #06080F; }
+.dc-canvas { background: radial-gradient(ellipse at 30% 0%, #0E1830 0%, #06080F 50%) !important; }
+.dc-section__title { color: var(--color-text-bright) !important; font-family: var(--font-display) !important; }
+.dc-section__sub   { color: var(--color-text-muted) !important; }
+.dc-artboard__label { color: var(--color-text-default) !important; font-family: var(--font-mono) !important; font-size: 11px !important; letter-spacing: 0.05em; }
+.dc-artboard { background: transparent !important; box-shadow: none !important; border: none !important; }
+.dc-toolbar  { background: rgba(8,12,24,0.85) !important; backdrop-filter: blur(14px); border-bottom: 1px solid var(--color-edge-soft) !important; }
+.dc-toolbar__title { color: var(--color-text-bright) !important; font-family: var(--font-display) !important; font-weight: 500; }
+
+/* ---------- Device frame ---------- */
+.ev-device-frame { width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; padding: 0; }
+.ev-device-frame__bezel {
+  width: 100%; height: 100%;
+  border-radius: 56px;
+  padding: 8px;
+  background: linear-gradient(160deg, #1a2238, #07090f 60%);
+  box-shadow:
+    0 0 0 1px rgba(140,170,220,0.10),
+    0 1px 0 rgba(255,255,255,0.06) inset,
+    0 40px 80px -20px rgba(0,0,0,0.9);
+}
+.ev-device-frame.is-land .ev-device-frame__bezel { border-radius: 36px; }
+.ev-device-frame.is-tab  .ev-device-frame__bezel { border-radius: 32px; }
+.ev-device-frame__inner {
+  width: 100%; height: 100%;
+  border-radius: 48px;
+  background: var(--color-surface-deep);
+  overflow: hidden;
+  position: relative;
+  isolation: isolate;
+}
+.ev-device-frame.is-land .ev-device-frame__inner { border-radius: 28px; }
+.ev-device-frame.is-tab  .ev-device-frame__inner { border-radius: 24px; }
+
+/* ---------- Screen base ---------- */
+.ev-screen {
+  position: absolute; inset: 0;
+  display: flex; flex-direction: column;
+  font-family: var(--font-sans);
+  color: var(--color-text-default);
+  overflow: hidden;
+  background: var(--color-surface-deep);
+}
+.ev-screen__body {
+  flex: 1;
+  padding: 12px 16px 96px;
+  overflow: hidden;
+  position: relative;
+  z-index: 2;
+}
+.ev-screen--land .ev-screen__body { padding-bottom: 16px; }
+
+/* ---------- Atmosphere ---------- */
+.nexus-grid-bg {
+  position: absolute; inset: 0;
+  background-image:
+    linear-gradient(rgba(140,200,255,0.06) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(140,200,255,0.06) 1px, transparent 1px);
+  background-size: 32px 32px;
+  mask-image: radial-gradient(ellipse at 50% 30%, #000 30%, transparent 75%);
+  z-index: 0;
+  animation: nexusGridDrift 20s linear infinite;
+}
+@keyframes nexusGridDrift { from { background-position: 0 0; } to { background-position: 32px 32px; } }
+.nexus-orb { position: absolute; width: 320px; height: 320px; border-radius: 50%; filter: blur(80px); pointer-events: none; z-index: 0; }
+.nexus-orb--cyan   { top: -80px; right: -100px; background: rgba(34,230,255,0.18); }
+.nexus-orb--violet { bottom: -120px; left: -100px; background: rgba(139,123,255,0.16); }
+
+/* ---------- Status bar ---------- */
+.ev-statusbar {
+  height: 28px; display: flex; align-items: center; justify-content: space-between;
+  padding: 0 22px;
+  font-family: var(--font-mono); font-size: 12px;
+  color: var(--color-text-bright);
+  position: relative; z-index: 3;
+}
+.ev-statusbar__notch { position: absolute; left: 50%; transform: translateX(-50%); top: 4px; width: 90px; height: 22px; border-radius: 999px; background: #000; }
+.ev-statusbar__icons { display: flex; align-items: center; gap: 6px; color: var(--color-text-bright); }
+.ev-statusbar__time { font-weight: 600; letter-spacing: 0.02em; }
+
+/* ---------- Reminder banner ---------- */
+.ev-reminder {
+  margin: 6px 12px 0;
+  padding: 10px 12px;
+  border-radius: var(--radius-md);
+  display: flex; align-items: center; gap: 10px;
+  background: rgba(255,176,32,0.10);
+  border: 1px solid rgba(255,176,32,0.35);
+  position: relative; z-index: 3;
+}
+.ev-reminder.is-danger { background: rgba(255,77,106,0.12); border-color: rgba(255,77,106,0.40); }
+.ev-reminder.is-info   { background: rgba(34,230,255,0.10); border-color: rgba(34,230,255,0.30); }
+.ev-reminder__icon { width: 24px; height: 24px; border-radius: 50%; display: grid; place-items: center; background: rgba(255,176,32,0.25); color: var(--color-state-warning); font-weight: 700; font-size: 13px; }
+.ev-reminder__text { flex: 1; }
+.ev-reminder__title { font-size: 12.5px; color: var(--color-text-bright); font-weight: 500; }
+.ev-reminder__meta { font-size: 10px; color: var(--color-text-muted); font-family: var(--font-mono); margin-top: 1px; }
+.ev-reminder__close { color: var(--color-text-muted); font-size: 18px; line-height: 1; padding: 4px; }
+
+/* ---------- Header ---------- */
+.ev-header { padding: 14px 16px 8px; display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; position: relative; z-index: 2; }
+.ev-header__kicker { font-family: var(--font-mono); font-size: 10px; letter-spacing: 0.25em; color: var(--color-signal-cyan); text-transform: uppercase; }
+.ev-header__title { font-family: var(--font-display); font-size: 26px; color: var(--color-text-bright); font-weight: 500; line-height: 1.1; margin-top: 4px; letter-spacing: -0.01em; }
+.ev-header__sub { font-size: 12px; color: var(--color-text-muted); margin-top: 4px; font-family: var(--font-mono); }
+.ev-header__right { display: flex; gap: 6px; align-items: center; padding-top: 14px; }
+
+/* ---------- BottomNav ---------- */
+.ev-bottomnav {
+  position: absolute; left: 0; right: 0; bottom: 0;
+  background: rgba(6,10,22,0.85);
+  backdrop-filter: blur(24px) saturate(140%);
+  border-top: 1px solid var(--color-edge-soft);
+  z-index: 5;
+}
+.ev-bottomnav__rail { display: grid; grid-template-columns: repeat(5, 1fr); padding: 6px 6px 4px; }
+.ev-bottomnav__safe { height: env(safe-area-inset-bottom, 8px); min-height: 8px; }
+.ev-tab { display: flex; flex-direction: column; align-items: center; gap: 2px; padding: 8px 4px 6px; color: var(--color-text-muted); position: relative; }
+.ev-tab__icon { display: grid; place-items: center; }
+.ev-tab__label { font-size: 10px; font-family: var(--font-mono); letter-spacing: 0.05em; }
+.ev-tab__dot { position: absolute; top: 2px; width: 18px; height: 2px; border-radius: 2px; background: var(--color-signal-cyan); box-shadow: 0 0 8px var(--color-signal-cyan-glow); }
+.ev-tab.is-active { color: var(--color-signal-cyan); }
+.ev-tab.is-active .ev-tab__icon { filter: drop-shadow(0 0 6px var(--color-signal-cyan-glow)); }
+
+/* ---------- Panel ---------- */
+.ev-panel {
+  background: var(--color-surface-panel);
+  backdrop-filter: blur(20px) saturate(140%);
+  border: 1px solid var(--color-edge-soft);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-panel);
+  position: relative;
+  overflow: hidden;
+}
+.ev-panel.is-interactive { transition: transform var(--dur-base) var(--ease-out-quint); }
+.ev-panel.has-glow::before {
+  content: ""; position: absolute; inset: -1px; border-radius: inherit; padding: 1px;
+  background: linear-gradient(135deg, rgba(34,230,255,0.6), transparent 50%, rgba(139,123,255,0.4));
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor; mask-composite: exclude; pointer-events: none;
+}
+
+/* ---------- Section title ---------- */
+.ev-section-title { display: flex; justify-content: space-between; align-items: baseline; font-size: 11px; color: var(--color-text-muted); text-transform: uppercase; letter-spacing: 0.18em; font-family: var(--font-mono); margin: 14px 2px 6px; }
+.ev-section-title__action { color: var(--color-signal-cyan); letter-spacing: 0; text-transform: none; }
+.ev-panel .ev-section-title { margin-top: 0; }
+
+/* ---------- Chips ---------- */
+.ev-chip { display: inline-flex; align-items: center; padding: 3px 9px; border-radius: 999px; font-size: 10px; font-family: var(--font-mono); letter-spacing: 0.1em; text-transform: uppercase; border: 1px solid var(--color-edge-soft); color: var(--color-text-default); }
+.ev-chip.tone-cyan    { color: var(--color-signal-cyan); border-color: rgba(34,230,255,0.4); background: rgba(34,230,255,0.08); }
+.ev-chip.tone-plasma  { color: var(--color-charge-plasma); border-color: rgba(77,255,155,0.4); background: rgba(77,255,155,0.08); }
+.ev-chip.tone-warning { color: var(--color-state-warning); border-color: rgba(255,176,32,0.4); background: rgba(255,176,32,0.08); }
+.ev-chip.tone-violet  { color: var(--color-signal-violet); border-color: rgba(139,123,255,0.4); background: rgba(139,123,255,0.08); }
+.ev-chip.is-solid.tone-cyan   { background: var(--color-signal-cyan); color: var(--color-text-on-cyan); border-color: var(--color-signal-cyan); }
+.ev-chip.is-solid.tone-plasma { background: var(--color-charge-plasma); color: var(--color-text-on-plasma); border-color: var(--color-charge-plasma); }
+
+/* ---------- CTAs ---------- */
+.ev-cta { width: 100%; height: 56px; border-radius: var(--radius-lg); display: flex; align-items: center; justify-content: center; gap: 10px; font-family: var(--font-display); font-size: 16px; font-weight: 500; letter-spacing: 0.02em; position: relative; overflow: hidden; }
+.ev-cta__sub { position: absolute; right: 16px; bottom: 8px; font-size: 10px; font-family: var(--font-mono); opacity: 0.7; font-weight: 400; }
+.ev-cta__glyph { display: grid; place-items: center; }
+.ev-cta--cyan   { background: linear-gradient(180deg, var(--color-signal-cyan), var(--color-signal-cyan-dim)); color: var(--color-text-on-cyan); box-shadow: var(--shadow-cyan); }
+.ev-cta--plasma { background: linear-gradient(180deg, var(--color-charge-plasma), var(--color-charge-plasma-dim)); color: var(--color-text-on-plasma); box-shadow: var(--shadow-plasma); }
+.ev-cta--danger { background: rgba(255,77,106,0.10); color: var(--color-state-danger); border: 1px solid rgba(255,77,106,0.45); }
+.ev-cta-secondary { width: 100%; height: 48px; border-radius: var(--radius-md); background: rgba(140,170,220,0.06); border: 1px solid var(--color-edge-soft); color: var(--color-text-bright); font-family: var(--font-display); font-weight: 500; font-size: 14px; }
+
+/* ---------- Charging start: rate plan / charger ---------- */
+.ev-charger-glyph { width: 44px; height: 44px; display: grid; place-items: center; border-radius: var(--radius-md); background: rgba(77,255,155,0.10); color: var(--color-charge-plasma); font-family: var(--font-display); font-weight: 600; font-size: 14px; border: 1px solid rgba(77,255,155,0.35); }
+.ev-rate-plan { padding: 10px; border-radius: var(--radius-md); background: rgba(140,170,220,0.04); border: 1px solid var(--color-edge-soft); text-align: center; }
+.ev-rate-plan.is-active { border-color: var(--color-signal-cyan); background: rgba(34,230,255,0.08); box-shadow: 0 0 0 1px rgba(34,230,255,0.5) inset; }
+
+/* ---------- Field ---------- */
+.ev-field { display: flex; flex-direction: column; gap: 4px; padding: 12px 14px; border-radius: var(--radius-md); background: rgba(140,170,220,0.04); border: 1px solid var(--color-edge-soft); }
+.ev-field.is-focused { border-color: var(--color-signal-cyan); box-shadow: 0 0 0 1px rgba(34,230,255,0.4) inset; }
+.ev-field__label { font-size: 10px; text-transform: uppercase; letter-spacing: 0.18em; color: var(--color-text-muted); font-family: var(--font-mono); }
+.ev-field__row { display: flex; align-items: baseline; gap: 4px; }
+.ev-field__value { font-family: var(--font-mono); color: var(--color-text-bright); font-size: 24px; }
+.ev-field__unit { font-family: var(--font-mono); color: var(--color-text-dim); font-size: 12px; }
+
+/* ---------- Charging live ---------- */
+.ev-charging-live { padding-top: 22px; }
+.ev-ring { position: relative; }
+.ev-ring__inner { position: absolute; inset: 0; display: grid; place-items: center; text-align: center; }
+.ev-ring__value { display: flex; align-items: baseline; justify-content: center; color: var(--color-text-bright); }
+.ev-ring__sub { margin-top: 6px; }
+.ev-live-metric { background: rgba(140,170,220,0.04); border: 1px solid var(--color-edge-soft); padding: 10px 8px; border-radius: var(--radius-md); text-align: center; }
+
+/* ---------- Progress track ---------- */
+.ev-progress-track { position: relative; height: 8px; border-radius: 4px; background: rgba(140,170,220,0.10); overflow: visible; }
+.ev-progress-track.is-thin { height: 4px; }
+.ev-progress-fill { height: 100%; border-radius: inherit; background: linear-gradient(90deg, var(--color-charge-plasma-dim), var(--color-charge-plasma)); box-shadow: 0 0 8px var(--color-charge-plasma-glow); }
+.ev-progress-fill.is-warn { background: linear-gradient(90deg, var(--color-state-warning-dim), var(--color-state-warning)); box-shadow: 0 0 8px rgba(255,176,32,0.45); }
+.ev-progress-target { position: absolute; top: -4px; bottom: -4px; }
+.ev-progress-target__line { width: 1px; height: 100%; background: var(--color-text-bright); }
+.ev-progress-target__label { position: absolute; top: -16px; left: -8px; font-family: var(--font-mono); font-size: 9px; color: var(--color-text-bright); }
+
+/* ---------- Summary ---------- */
+.ev-summary-cell.tone-cyan { border-color: rgba(34,230,255,0.25); }
+
+/* ---------- Map placeholder ---------- */
+.ev-map-placeholder {
+  height: 110px;
+  border-radius: var(--radius-md);
+  background:
+    repeating-linear-gradient(45deg, rgba(140,200,255,0.04) 0 6px, transparent 6px 14px),
+    rgba(140,170,220,0.04);
+  border: 1px solid var(--color-edge-soft);
+  position: relative; padding: 10px; overflow: hidden;
+}
+.ev-map-placeholder.is-land { height: 100%; }
+.ev-map-pin { width: 12px; height: 12px; border-radius: 50%; background: var(--color-signal-cyan); position: absolute; top: 36px; left: 50%; transform: translateX(-50%); box-shadow: 0 0 0 6px rgba(34,230,255,0.25), 0 0 12px var(--color-signal-cyan-glow); }
+.ev-map-route { position: absolute; inset: 0; }
+
+/* ---------- Toast ---------- */
+.ev-toast { position: absolute; top: 36px; left: 14px; right: 14px; z-index: 6; background: rgba(15,22,42,0.95); border: 1px solid var(--color-edge-strong); border-radius: var(--radius-md); display: flex; align-items: stretch; overflow: hidden; box-shadow: var(--shadow-elevated); }
+.ev-toast__bar { width: 4px; }
+.ev-toast.tone-ok .ev-toast__bar { background: var(--color-charge-plasma); box-shadow: 0 0 12px var(--color-charge-plasma-glow); }
+.ev-toast__body { padding: 10px 12px; flex: 1; }
+.ev-toast__title { font-size: 13px; color: var(--color-text-bright); font-weight: 500; }
+.ev-toast__sub { font-size: 11px; color: var(--color-text-muted); margin-top: 2px; font-family: var(--font-mono); }
+
+/* ---------- Stat tile ---------- */
+.ev-stat-tile { padding: 14px; }
+.ev-stat-tile__head { display: flex; justify-content: space-between; align-items: baseline; }
+.ev-stat-tile__label { font-size: 10px; text-transform: uppercase; letter-spacing: 0.18em; color: var(--color-text-muted); font-family: var(--font-mono); }
+.ev-stat-tile__value { display: flex; align-items: baseline; gap: 4px; margin-top: 6px; }
+.ev-stat-tile__num { font-family: var(--font-mono); font-size: 26px; color: var(--color-text-bright); line-height: 1; letter-spacing: -0.01em; }
+.ev-stat-tile__unit { font-family: var(--font-mono); font-size: 11px; color: var(--color-text-dim); }
+.ev-stat-tile__delta { font-family: var(--font-mono); font-size: 10px; margin-top: 4px; }
+.ev-stat-tile__delta.is-up   { color: var(--color-charge-plasma); }
+.ev-stat-tile__delta.is-down { color: var(--color-state-danger); }
+.ev-stat-tile.tone-cyan    { border-top: 1px solid rgba(34,230,255,0.4); }
+.ev-stat-tile.tone-plasma  { border-top: 1px solid rgba(77,255,155,0.4); }
+.ev-stat-tile.tone-warning { border-top: 1px solid rgba(255,176,32,0.4); }
+.ev-stat-tile.tone-violet  { border-top: 1px solid rgba(139,123,255,0.4); }
+
+/* ---------- Filter chip ---------- */
+.ev-filter-chip { padding: 6px 12px; border-radius: 999px; background: rgba(140,170,220,0.05); border: 1px solid var(--color-edge-soft); font-size: 12px; color: var(--color-text-muted); white-space: nowrap; font-family: var(--font-mono); }
+.ev-filter-chip.is-active { background: rgba(34,230,255,0.10); border-color: var(--color-edge-cyan); color: var(--color-signal-cyan); }
+
+/* ---------- Timeline ---------- */
+.ev-timeline { position: relative; }
+.ev-timeline__item { display: flex; gap: 12px; padding-bottom: 10px; position: relative; }
+.ev-timeline__rail { width: 28px; display: flex; flex-direction: column; align-items: center; padding-top: 4px; position: relative; }
+.ev-timeline__rail::after { content: ""; position: absolute; top: 32px; bottom: -10px; left: 50%; width: 1px; background: var(--color-edge-faint); }
+.ev-timeline__item:last-child .ev-timeline__rail::after { display: none; }
+.ev-timeline__node { width: 28px; height: 28px; border-radius: 50%; display: grid; place-items: center; background: rgba(15,22,42,0.95); border: 1px solid var(--color-edge-soft); font-size: 12px; }
+.ev-timeline__item.tone-plasma .ev-timeline__node { border-color: rgba(77,255,155,0.45); box-shadow: 0 0 8px var(--color-charge-plasma-glow); }
+.ev-timeline__item.tone-violet .ev-timeline__node { border-color: rgba(139,123,255,0.45); }
+.ev-timeline__item.tone-cyan   .ev-timeline__node { border-color: rgba(34,230,255,0.45); box-shadow: 0 0 8px var(--color-signal-cyan-glow); }
+
+/* ---------- Vehicle ---------- */
+.ev-vehicle-hero { padding: 16px; }
+.ev-vehicle-illust { height: 130px; border-radius: var(--radius-md); position: relative; overflow: hidden; background: radial-gradient(ellipse at 50% 70%, rgba(34,230,255,0.18), transparent 60%), repeating-linear-gradient(45deg, rgba(140,200,255,0.04) 0 8px, transparent 8px 16px), var(--color-surface-base); border: 1px solid var(--color-edge-soft); display: grid; place-items: center; }
+.ev-vehicle-illust__inner { padding: 6px 10px; border-radius: var(--radius-sm); background: rgba(0,0,0,0.45); border: 1px dashed var(--color-edge-soft); }
+.ev-hero-stat { background: rgba(140,170,220,0.04); border: 1px solid var(--color-edge-soft); border-radius: var(--radius-md); padding: 10px; }
+.ev-tax-card { position: relative; }
+.ev-tax-card.tone-plasma { border-color: rgba(77,255,155,0.35); }
+.ev-tax-card.tone-cyan   { border-color: rgba(34,230,255,0.30); }
+
+/* ---------- Settings ---------- */
+.ev-fg-tag { display: inline-flex; align-items: center; gap: 8px; padding: 6px 10px; border-radius: 999px; background: rgba(77,255,155,0.10); border: 1px solid rgba(77,255,155,0.35); color: var(--color-charge-plasma); font-family: var(--font-mono); font-size: 11px; margin: 0 2px 4px; }
+.ev-fg-tag__pulse { width: 6px; height: 6px; border-radius: 50%; background: var(--color-charge-plasma); box-shadow: 0 0 0 0 var(--color-charge-plasma-glow); animation: pulseDot 1.6s ease-out infinite; }
+@keyframes pulseDot { 0% { box-shadow: 0 0 0 0 rgba(77,255,155,0.6);} 100% { box-shadow: 0 0 0 8px rgba(77,255,155,0);} }
+.ev-status-dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; }
+.ev-status-dot.is-ok { background: var(--color-charge-plasma); box-shadow: 0 0 8px var(--color-charge-plasma-glow); }
+.ev-status-dot.is-plasma { background: var(--color-charge-plasma); box-shadow: 0 0 8px var(--color-charge-plasma-glow); }
+.ev-settings-divider { height: 1px; background: var(--color-edge-faint); margin: 12px -16px; }
+.ev-settings-row { display: flex; justify-content: space-between; align-items: center; padding: 6px 0; }
+.ev-list-row { display: flex; align-items: center; gap: 10px; padding: 12px 14px; border-bottom: 1px solid var(--color-edge-faint); }
+.ev-list-row:last-child { border-bottom: none; }
+.ev-list-row.is-tappable:hover { background: rgba(140,170,220,0.04); }
+.ev-toggle { width: 40px; height: 24px; border-radius: 999px; background: rgba(140,170,220,0.15); position: relative; transition: background var(--dur-base); }
+.ev-toggle__thumb { position: absolute; top: 3px; left: 3px; width: 18px; height: 18px; border-radius: 50%; background: var(--color-text-default); transition: all var(--dur-base) var(--ease-out-quint); }
+.ev-toggle.is-on { background: var(--color-signal-cyan); }
+.ev-toggle.is-on .ev-toggle__thumb { left: 19px; background: var(--color-text-on-cyan); }
+.ev-info-callout { display: flex; gap: 10px; padding: 10px; background: rgba(34,230,255,0.06); border: 1px solid rgba(34,230,255,0.20); border-radius: var(--radius-md); }
+.ev-info-callout__icon { width: 20px; height: 20px; border-radius: 50%; background: rgba(34,230,255,0.20); color: var(--color-signal-cyan); display: grid; place-items: center; font-size: 12px; font-family: var(--font-mono); flex-shrink: 0; }
+
+/* ---------- Maintenance / Inspection ---------- */
+.ev-maint-glyph { width: 36px; height: 36px; border-radius: var(--radius-md); display: grid; place-items: center; background: rgba(139,123,255,0.10); border: 1px solid rgba(139,123,255,0.35); font-size: 16px; }
+.ev-upcoming { padding: 12px; border-radius: var(--radius-md); background: rgba(140,170,220,0.04); border: 1px solid var(--color-edge-soft); }
+.ev-fav-row { display: flex; gap: 12px; align-items: center; padding: 8px 0; border-bottom: 1px solid var(--color-edge-faint); }
+.ev-fav-row:last-child { border-bottom: none; }
+.ev-fav-row__rank { width: 24px; height: 24px; border-radius: 50%; background: rgba(34,230,255,0.10); border: 1px solid rgba(34,230,255,0.40); color: var(--color-signal-cyan); display: grid; place-items: center; font-family: var(--font-mono); font-size: 11px; }
+
+/* ---------- Meter capture ---------- */
+.ev-meter-cam { position: absolute; inset: 0; background: #000; display: flex; flex-direction: column; }
+.ev-meter-cam__viewfinder { flex: 1; position: relative; background: radial-gradient(ellipse at 50% 50%, #1a1f1a 0%, #050805 70%); display: grid; place-items: center; padding: 32px; }
+.ev-meter-cam__frame { position: relative; width: 90%; aspect-ratio: 16/7; border: 1px dashed rgba(77,255,155,0.5); display: grid; place-items: center; }
+.ev-meter-cam__corner { position: absolute; width: 22px; height: 22px; border: 2px solid var(--color-charge-plasma); }
+.ev-meter-cam__corner.tl { top: -2px; left: -2px; border-right: none; border-bottom: none; }
+.ev-meter-cam__corner.tr { top: -2px; right: -2px; border-left: none; border-bottom: none; }
+.ev-meter-cam__corner.bl { bottom: -2px; left: -2px; border-right: none; border-top: none; }
+.ev-meter-cam__corner.br { bottom: -2px; right: -2px; border-left: none; border-top: none; }
+.ev-meter-cam__readout { text-align: center; }
+.ev-meter-cam__hint { position: absolute; bottom: 24px; left: 50%; transform: translateX(-50%); display: inline-flex; align-items: center; gap: 8px; padding: 8px 14px; border-radius: 999px; background: rgba(0,0,0,0.7); border: 1px solid var(--color-edge-soft); }
+.ev-meter-cam__controls { padding: 24px 24px calc(32px + env(safe-area-inset-bottom, 0px)); display: flex; align-items: center; justify-content: space-between; gap: 16px; background: linear-gradient(180deg, transparent, #000); }
+.ev-meter-cam__btn { color: var(--color-text-bright); font-family: var(--font-mono); font-size: 12px; }
+.ev-meter-cam__btn--ghost { padding: 10px 14px; border-radius: 999px; background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.12); }
+.ev-meter-cam__shutter { width: 72px; height: 72px; border-radius: 50%; background: #fff; padding: 6px; }
+.ev-meter-cam__shutter span { display: block; width: 100%; height: 100%; border-radius: 50%; background: #fff; border: 3px solid #000; box-shadow: 0 0 0 2px #fff; }
+
+/* ---------- Onboarding ---------- */
+.ev-onboard-logo { position: relative; width: 160px; height: 160px; margin: 0 auto; display: grid; place-items: center; }
+.ev-onboard-logo__ring { position: absolute; inset: 0; border-radius: 50%; border: 1px solid rgba(34,230,255,0.35); animation: ringSpin 12s linear infinite; }
+.ev-onboard-logo__ring.is-2 { inset: 14px; border-color: rgba(139,123,255,0.4); animation: ringSpin 8s linear infinite reverse; border-style: dashed; }
+@keyframes ringSpin { to { transform: rotate(360deg); } }
+.ev-onboard-logo__core { width: 88px; height: 88px; border-radius: 50%; background: linear-gradient(135deg, var(--color-signal-cyan), var(--color-signal-violet)); display: grid; place-items: center; color: var(--color-text-on-cyan); font-family: var(--font-display); font-weight: 700; font-size: 28px; box-shadow: 0 0 32px var(--color-signal-cyan-glow); }
+.ev-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--color-edge-soft); }
+.ev-dot.is-on { width: 22px; border-radius: 3px; background: var(--color-signal-cyan); box-shadow: 0 0 8px var(--color-signal-cyan-glow); }
+.ev-link { color: var(--color-signal-cyan); font-size: 12px; font-family: var(--font-mono); }
+
+/* ---------- Help ---------- */
+.ev-help-glyph { width: 40px; height: 40px; border-radius: var(--radius-md); display: grid; place-items: center; background: rgba(34,230,255,0.10); border: 1px solid rgba(34,230,255,0.35); color: var(--color-signal-cyan); font-family: var(--font-display); font-weight: 600; font-size: 18px; }
+.ev-faq-q { width: 18px; height: 18px; border-radius: 4px; display: grid; place-items: center; background: rgba(34,230,255,0.15); color: var(--color-signal-cyan); font-family: var(--font-mono); font-size: 10px; flex-shrink: 0; }
+.ev-faq-a { width: 18px; height: 18px; border-radius: 4px; display: grid; place-items: center; background: rgba(139,123,255,0.15); color: var(--color-signal-violet); font-family: var(--font-mono); font-size: 10px; flex-shrink: 0; }
+
+/* ---------- Drive log landscape ---------- */
+.ev-drivelog { display: grid; grid-template-columns: 1fr 1fr; height: 100%; padding: 16px; gap: 16px; position: relative; z-index: 2; }
+.ev-drivelog__left { display: flex; flex-direction: column; padding-top: 8px; }
+.ev-drivelog__right { position: relative; }
+
+/* ---------- Tablet ---------- */
+.ev-screen--tab .ev-screen__body { padding: 16px 24px; }
+.ev-tab-shell { display: grid; grid-template-columns: 220px 1fr; height: 100%; position: relative; z-index: 2; }
+.ev-tab-rail { display: flex; flex-direction: column; gap: 6px; padding: 24px 16px calc(24px + env(safe-area-inset-bottom, 0px)); border-right: 1px solid var(--color-edge-soft); background: rgba(8,12,24,0.6); backdrop-filter: blur(20px); }
+.ev-tab-rail__brand { display: flex; align-items: center; gap: 10px; padding: 8px 8px 16px; border-bottom: 1px solid var(--color-edge-faint); margin-bottom: 12px; }
+.ev-tab-rail__logo { width: 40px; height: 40px; border-radius: 12px; background: linear-gradient(135deg, var(--color-signal-cyan), var(--color-signal-violet)); display: grid; place-items: center; font-family: var(--font-display); font-weight: 700; color: var(--color-text-on-cyan); font-size: 14px; }
+.ev-tab-rail__item { display: flex; align-items: center; gap: 10px; padding: 10px 14px; border-radius: var(--radius-md); color: var(--color-text-muted); font-size: 14px; }
+.ev-tab-rail__item.is-active { background: rgba(34,230,255,0.10); color: var(--color-signal-cyan); border: 1px solid rgba(34,230,255,0.30); }
+.ev-tab-rail__dot { width: 6px; height: 6px; border-radius: 50%; background: currentColor; opacity: 0.7; }
+.ev-tab-main { padding: 28px 32px; overflow: hidden; }
+.ev-screen--tab .ev-tab-main .ev-header { padding: 0 0 12px; }
+
+/* ---------- Doc styles ---------- */
+.ev-doc { background: var(--color-surface-deep); width: 100%; height: 100%; padding: 36px 44px; overflow: auto; color: var(--color-text-default); font-family: var(--font-sans); position: relative; border-radius: var(--radius-lg); border: 1px solid var(--color-edge-soft); }
+.ev-doc::before { content: ""; position: absolute; inset: 0; background-image: linear-gradient(rgba(140,200,255,0.04) 1px, transparent 1px), linear-gradient(90deg, rgba(140,200,255,0.04) 1px, transparent 1px); background-size: 32px 32px; mask-image: radial-gradient(ellipse at 50% 0%, #000 30%, transparent 70%); pointer-events: none; }
+.ev-doc > * { position: relative; }
+.ev-doc__kicker { font-family: var(--font-mono); font-size: 11px; letter-spacing: 0.3em; color: var(--color-signal-cyan); text-transform: uppercase; }
+.ev-doc h1 { font-family: var(--font-display); font-size: 36px; color: var(--color-text-bright); font-weight: 500; margin-top: 6px; letter-spacing: -0.01em; }
+.ev-doc__lede { font-size: 15px; color: var(--color-text-muted); margin-top: 10px; line-height: 1.6; max-width: 620px; }
+.ev-doc h2 { font-family: var(--font-display); font-size: 18px; color: var(--color-signal-cyan); margin-top: 24px; font-weight: 500; }
+.ev-doc p { font-size: 13.5px; line-height: 1.75; margin-top: 8px; max-width: 660px; color: var(--color-text-default); }
+.ev-doc code { font-family: var(--font-mono); font-size: 12px; padding: 1px 6px; border-radius: 4px; background: rgba(140,170,220,0.10); color: var(--color-text-bright); }
+.ev-table { width: 100%; border-collapse: collapse; margin-top: 14px; font-size: 12px; }
+.ev-table th { text-align: left; padding: 8px 10px; border-bottom: 1px solid var(--color-edge-soft); color: var(--color-text-muted); font-family: var(--font-mono); font-weight: 500; text-transform: uppercase; letter-spacing: 0.08em; font-size: 10px; }
+.ev-table td { padding: 9px 10px; border-bottom: 1px solid var(--color-edge-faint); color: var(--color-text-default); vertical-align: top; }
+.ev-table td.mono { font-family: var(--font-mono); color: var(--color-text-muted); font-size: 11px; }
+.ev-pre { font-family: var(--font-mono); font-size: 11.5px; padding: 14px 16px; background: var(--color-surface-base); border: 1px solid var(--color-edge-soft); border-radius: var(--radius-md); margin-top: 10px; color: var(--color-text-default); overflow: auto; white-space: pre; }
+.ev-swatch-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-top: 10px; }
+.ev-swatch { padding: 10px; background: var(--color-surface-base); border: 1px solid var(--color-edge-soft); border-radius: var(--radius-md); }
+.ev-swatch__chip { height: 56px; border-radius: var(--radius-sm); border: 1px solid var(--color-edge-soft); }
+.ev-type-row { padding: 16px 0; border-bottom: 1px solid var(--color-edge-faint); }
+.ev-radius-demo { height: 60px; background: rgba(140,170,220,0.06); border: 1px solid var(--color-edge-soft); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; }

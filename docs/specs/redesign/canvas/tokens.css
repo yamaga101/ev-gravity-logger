@@ -1,0 +1,117 @@
+/* ============================================================
+   EV Manager — NEXUS v2 (Direction A: Evolution)
+   Tailwind v4 @theme tokens — drop into src/index.css
+   ============================================================ */
+
+@theme {
+  /* ---------- Brand / Signal ----------
+     Cyber Cyan refined: slightly desaturated for long-session legibility.
+     Charging Plasma: warmer, less neon, still unmistakably "energy".
+     Violet retained as secondary accent. */
+  --color-signal-cyan:        #22E6FF;
+  --color-signal-cyan-dim:    #0FA3B8;
+  --color-signal-cyan-deep:   #08545F;
+  --color-signal-cyan-glow:   rgba(34, 230, 255, 0.45);
+
+  --color-signal-violet:      #8B7BFF;
+  --color-signal-violet-dim:  #5B4FCC;
+
+  --color-charge-plasma:      #4DFF9B;   /* charging state — green-cyan, less raw */
+  --color-charge-plasma-dim:  #1FB066;
+  --color-charge-plasma-glow: rgba(77, 255, 155, 0.40);
+
+  /* ---------- Status ---------- */
+  --color-state-warning:      #FFB020;
+  --color-state-warning-dim:  #B57900;
+  --color-state-danger:       #FF4D6A;
+  --color-state-danger-dim:   #B82A42;
+  --color-state-ok:           #4DFF9B;
+
+  /* ---------- Surfaces — "Deep Space" depth stack ----------
+     Layered so glass panels read as floating without losing contrast.
+     Tuned warmer than pure #000 to reduce OLED smearing on S25U. */
+  --color-surface-void:       #04060D;   /* root background */
+  --color-surface-deep:       #080C18;   /* page background */
+  --color-surface-base:       #0E1424;   /* below-glass plate */
+  --color-surface-panel:      rgba(16, 22, 40, 0.78);   /* glass panel */
+  --color-surface-elevated:   rgba(24, 32, 54, 0.88);   /* modal / sheet */
+  --color-surface-hi:         rgba(36, 48, 76, 0.92);   /* pressed / focus */
+  --color-surface-overlay:    rgba(4, 6, 13, 0.72);     /* scrim */
+
+  /* ---------- Borders / hairlines ---------- */
+  --color-edge-faint:         rgba(140, 170, 220, 0.08);
+  --color-edge-soft:          rgba(140, 170, 220, 0.14);
+  --color-edge-strong:        rgba(140, 200, 255, 0.28);
+  --color-edge-cyan:          rgba(34, 230, 255, 0.45);
+
+  /* ---------- Text ---------- */
+  --color-text-bright:        #EAF2FF;
+  --color-text-default:       #C4D2E8;
+  --color-text-muted:         #8597B3;
+  --color-text-dim:           #5C6B85;
+  --color-text-disabled:      #3A455C;
+  --color-text-on-cyan:       #04141B;
+  --color-text-on-plasma:     #04140B;
+
+  /* ---------- Typography ----------
+     Sora — modern geometric, replaces Orbitron's "movie poster" stiffness
+     while keeping the technical posture. Excellent JP rendering pairing.
+     JetBrains Mono retained for numerals (kWh, %, ¥).
+     Inter as fallback body. Noto Sans JP for Japanese. */
+  --font-display:  "Sora", "Noto Sans JP", system-ui, sans-serif;
+  --font-sans:     "Inter", "Noto Sans JP", system-ui, sans-serif;
+  --font-mono:     "JetBrains Mono", ui-monospace, monospace;
+
+  /* ---------- Type scale (mobile-first, 412dp base) ---------- */
+  --text-micro:     10px;   /* tags, foreground service hint */
+  --text-caption:   12px;
+  --text-body-sm:   13px;
+  --text-body:      15px;
+  --text-body-lg:   17px;
+  --text-h4:        20px;
+  --text-h3:        24px;
+  --text-h2:        30px;
+  --text-h1:        38px;
+  --text-display:   56px;   /* live SOC, kWh hero */
+
+  /* ---------- Radii — slightly tighter than v1 for tactical feel ---------- */
+  --radius-xs:   4px;
+  --radius-sm:   8px;
+  --radius-md:   12px;
+  --radius-lg:   16px;
+  --radius-xl:   22px;
+  --radius-pill: 999px;
+
+  /* ---------- Shadows / glow ---------- */
+  --shadow-panel:    0 1px 0 rgba(255,255,255,0.04) inset,
+                     0 20px 40px -20px rgba(0,0,0,0.8);
+  --shadow-elevated: 0 1px 0 rgba(255,255,255,0.06) inset,
+                     0 30px 60px -25px rgba(0,0,0,0.9);
+  --shadow-cyan:     0 0 0 1px rgba(34,230,255,0.35),
+                     0 8px 32px -8px rgba(34,230,255,0.55);
+  --shadow-plasma:   0 0 0 1px rgba(77,255,155,0.35),
+                     0 8px 32px -8px rgba(77,255,155,0.50);
+
+  /* ---------- Motion ---------- */
+  --ease-out-quint:  cubic-bezier(0.22, 1, 0.36, 1);
+  --ease-spring:     cubic-bezier(0.34, 1.56, 0.64, 1);
+  --dur-fast:    140ms;
+  --dur-base:    220ms;
+  --dur-slow:    420ms;
+
+  /* ---------- Spacing rhythm (mobile, 4pt grid) ---------- */
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 20px;
+  --space-6: 24px;
+  --space-8: 32px;
+  --space-10: 40px;
+  --space-12: 48px;
+
+  /* ---------- App chrome ---------- */
+  --bottom-nav-h:   72px;     /* + safe-area-inset-bottom */
+  --status-bar-h:   28px;     /* visualizer only — Capacitor handles real bar */
+  --reminder-h:     44px;     /* ReminderBanner (collapsed) */
+}
