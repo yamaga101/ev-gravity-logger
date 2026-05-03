@@ -1,7 +1,7 @@
 {
   "name": "ev-manager",
   "private": true,
-  "version": "4.7.3",
+  "version": "4.8.0",
   "type": "module",
   "scripts": {
     "dev": "vite",
@@ -21,6 +21,8 @@
     "@capacitor/android": "^7.0.0",
     "@capacitor/core": "^7.0.0",
     "@capacitor/preferences": "^7.0.0",
+    "@transistorsoft/capacitor-background-fetch": "^7.0.0",
+    "@transistorsoft/capacitor-background-geolocation": "^7.0.0",
     "lucide-react": "^0.511.0",
     "react": "^19.2.0",
     "react-dom": "^19.2.0",

@@ -16,6 +16,7 @@ import { useSettingsStore } from "./store/useSettingsStore.ts";
 import { useToastStore } from "./store/useToastStore.ts";
 import { useServiceWorker } from "./hooks/useServiceWorker.ts";
 import { useAutoImport } from "./hooks/useAutoImport.ts";
+import { useBackgroundGeolocation } from "./hooks/useBackgroundGeolocation.ts";
 import { useSyncStore } from "./store/useSyncStore.ts";
 import { getTranslations } from "./i18n/index.ts";
 import type { TabId, ChargingRecord } from "./types/index.ts";
@@ -46,6 +47,8 @@ export default function App() {
   const showToast = useToastStore((s) => s.showToast);
   const { needRefresh, update, dismiss } = useServiceWorker();
   useAutoImport();
+  // P0-3 PoC: BG location tracking (native only, no-op on web)
+  const bgStats = useBackgroundGeolocation();
 
   const t = getTranslations(lang);
 
@@ -202,6 +205,14 @@ export default function App() {
             <>
               <span className="text-border-subtle">|</span>
               <span className="text-nexus-warning">SYNC:{outboxCount}</span>
+            </>
+          )}
+          {bgStats.ready && (
+            <>
+              <span className="text-border-subtle">|</span>
+              <span className={bgStats.isMoving ? "text-nexus-cyan" : "text-text-dim/40"}>
+                BG:{bgStats.sampleCount}{bgStats.lastActivity ? `/${bgStats.lastActivity}` : ""}
+              </span>
             </>
           )}
         </div>
