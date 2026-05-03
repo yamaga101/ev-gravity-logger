@@ -21,6 +21,13 @@ allprojects {
     repositories {
         google()
         mavenCentral()
+        // transistorsoft tslocationmanager AAR (バンドル済 Maven repo)
+        maven {
+            url("$rootDir/../node_modules/@transistorsoft/capacitor-background-geolocation/android/libs")
+        }
+        maven {
+            url("$rootDir/../node_modules/@transistorsoft/capacitor-background-fetch/android/libs")
+        }
     }
 }
 
