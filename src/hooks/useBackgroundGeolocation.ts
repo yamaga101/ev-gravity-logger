@@ -70,8 +70,24 @@ export function useBackgroundGeolocation() {
         );
         const BG = mod.default ?? mod;
 
+        // 通知再投与 helper: text を毎回変えて plugin に startForeground() を再呼出させる
+        // → ユーザーが swipe dismiss した後でも復活する
+        const reissueNotification = () => {
+          const now = new Date().toLocaleTimeString("ja-JP", { hour12: false });
+          BG.setConfig({
+            notification: {
+              title: "EV Manager — 移動記録 (常駐)",
+              text: `BG 記録中 (last: ${now})`,
+              sticky: true,
+              priority: BG.NOTIFICATION_PRIORITY_HIGH,
+              channelName: "EV Manager BG GPS",
+            },
+          }).catch((e: any) => console.warn("[BG-POC] reissue failed", e));
+        };
+
         // listeners
         const locSub = BG.onLocation((loc: any) => {
+          reissueNotification();
           const sample: PocLocationSample = {
             ts: new Date(loc.timestamp).toISOString(),
             lat: loc.coords.latitude,
@@ -97,6 +113,7 @@ export function useBackgroundGeolocation() {
 
         const motionSub = BG.onMotionChange((event: any) => {
           console.log("[BG-POC] motionchange", event.isMoving, event.location);
+          reissueNotification();
         });
         unsubscribers.push(() => motionSub.remove?.());
 
@@ -108,6 +125,14 @@ export function useBackgroundGeolocation() {
         });
         unsubscribers.push(() => activitySub.remove?.());
 
+        // heartbeat: 静止中も 60秒ごとに plugin が wake → 通知復活
+        // Doze mode 下でも plugin native 側で wake lock 取得済
+        const heartbeatSub = BG.onHeartbeat((event: any) => {
+          console.log("[BG-POC] heartbeat", event?.location?.timestamp);
+          reissueNotification();
+        });
+        unsubscribers.push(() => heartbeatSub.remove?.());
+
         // ready (Council 推奨設定)
         const state = await BG.ready({
           desiredAccuracy: BG.DESIRED_ACCURACY_HIGH,
@@ -118,10 +143,14 @@ export function useBackgroundGeolocation() {
           stopOnTerminate: false,
           startOnBoot: true,
           enableHeadless: true,
+          // 静止中も 60秒ごとに wake → 通知再投与のトリガー
+          heartbeatInterval: 60,
           notification: {
-            title: "EV Manager — 移動記録",
-            text: "アプリは BG で位置を記録しています",
+            title: "EV Manager — 移動記録 (常駐)",
+            text: "BG で位置を記録中。スワイプで消しても 60 秒以内に復活します",
             sticky: true,
+            priority: BG.NOTIFICATION_PRIORITY_HIGH,
+            channelName: "EV Manager BG GPS",
           },
           debug: false, // PoC 中は false (true にすると効果音うるさい)
           logLevel: BG.LOG_LEVEL_VERBOSE,
