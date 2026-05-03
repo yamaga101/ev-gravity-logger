@@ -1,8 +1,14 @@
 // @ts-nocheck
 // NEXUS v2 main screens — canvas/ev-screens-main.jsx を TSX 化
+// L3 wiring: Settings 画面の GAS URL 表示と「今すぐ同期」ボタンを実 store と接続。
+// BG GPS toggle は **PoC 期間中は visual のみ未配線** (5/6 評価まで service を触らない)。
 
 import React from 'react';
 import { NexusBg, ReminderBanner, AppHeader, BottomNav, Panel, ProgressRing, Chip, PrimaryCTA, StatTile, MiniChart, BarChart, Field, FgServiceTag, SectionTitle, Toast } from './primitives';
+import { useSettingsStore } from '../../store/useSettingsStore';
+import { useSyncStore } from '../../store/useSyncStore';
+import { useToastStore } from '../../store/useToastStore';
+import { useChargingStore } from '../../store/useChargingStore';
 
 /* ============================================================
    EV Manager — Screen modules (主要 5 タブ)
@@ -188,13 +194,36 @@ function SummaryCell({ label, value, sub, tone = "default" }) {
 /* ---------- 2. HISTORY — unified timeline ---------- */
 
 function HistoryScreen() {
-  const items = [
-    { type: "charge", date: "今日 14:23", title: "急速充電 27.4kWh", meta: "道の駅 川場田園プラザ · ¥753", tag: "DC" },
-    { type: "charge", date: "5/01 22:15", title: "普通充電 18.2kWh", meta: "自宅 · ¥510", tag: "AC" },
-    { type: "maint",  date: "4/28",      title: "タイヤローテーション", meta: "オートバックス 高崎 · ¥3,300" },
-    { type: "charge", date: "4/26 09:42", title: "急速充電 22.0kWh", meta: "イオンモール高崎 · ¥605", tag: "DC" },
-    { type: "inspect", date: "4/15",     title: "12ヶ月点検", meta: "ディーラー · ¥18,700" },
-    { type: "charge", date: "4/12 18:30", title: "普通充電 24.8kWh", meta: "自宅 · ¥694", tag: "AC" },
+  // L3 wire: 実 charging history を表示 (mock fallback あり)
+  const history = useChargingStore((s) => s.history);
+  const fmt = (ts: string | undefined) => {
+    if (!ts) return "—";
+    const d = new Date(ts);
+    if (isNaN(d.getTime())) return ts;
+    const now = new Date();
+    const sameDay = d.toDateString() === now.toDateString();
+    const time = `${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}`;
+    if (sameDay) return `今日 ${time}`;
+    const yesterday = new Date(now); yesterday.setDate(now.getDate() - 1);
+    if (d.toDateString() === yesterday.toDateString()) return `昨日 ${time}`;
+    return `${d.getMonth() + 1}/${String(d.getDate()).padStart(2, "0")} ${time}`;
+  };
+  const records = history.slice(0, 30).map((r) => {
+    const kw = typeof r.kw === "number" ? r.kw : parseFloat(r.kw as any) || 0;
+    const isDC = kw >= 30;
+    const kwh = (r.chargedKwh ?? 0).toFixed(1);
+    const cost = (r.cost ?? 0).toLocaleString("ja-JP");
+    return {
+      type: "charge" as const,
+      date: fmt(r.endTime || (r as any).timestamp),
+      title: `${isDC ? "急速" : "普通"}充電 ${kwh}kWh`,
+      meta: `${r.locationName || "—"} · ¥${cost}`,
+      tag: isDC ? "DC" : "AC",
+    };
+  });
+  // 履歴ゼロ時のオンボーディング表示は維持
+  const items = records.length > 0 ? records : [
+    { type: "charge", date: "—", title: "まだ履歴がありません", meta: "充電を記録すると一覧表示されます", tag: undefined },
   ];
   const TYPE_GLYPH = { charge: "⚡", maint: "🔧", inspect: "🛡" };
   const TYPE_TONE  = { charge: "plasma", maint: "violet", inspect: "cyan" };
@@ -240,26 +269,48 @@ function FilterChip({ children, active }) {
 /* ---------- 3. STATS — dashboard ---------- */
 
 function StatsScreen() {
-  const cost = [4200, 3800, 5100, 4600, 5400, 4900, 5800, 5200, 4700, 5100, 4400, 5800];
-  const months = ["6","7","8","9","10","11","12","1","2","3","4","5"];
+  // L3 wire: 主要 KPI を実 history 集計から。グラフは mock 維持 (集計 logic 移植は次)
+  const history = useChargingStore((s) => s.history);
+  const totalKwh = history.reduce((s, r) => s + (r.chargedKwh ?? 0), 0);
+  const totalCost = history.reduce((s, r) => s + (r.cost ?? 0), 0);
+  const sessions = history.length;
+  const avgEfficiency = (() => {
+    const xs = history.map((r) => r.efficiency).filter((v) => typeof v === "number" && v > 0);
+    return xs.length ? xs.reduce((a, b) => a + b, 0) / xs.length : null;
+  })();
+  const lastSoh = history.find((r) => typeof r.soh === "number")?.soh ?? null;
+  const fmt = (n: number, d = 0) => n.toLocaleString("ja-JP", { minimumFractionDigits: d, maximumFractionDigits: d });
+  // 月次コスト集計 (直近 12 ヶ月)
+  const now = new Date();
+  const cost = Array.from({ length: 12 }, (_, i) => {
+    const m = new Date(now.getFullYear(), now.getMonth() - 11 + i, 1);
+    return history.reduce((s, r) => {
+      const t = new Date(r.endTime || (r as any).timestamp);
+      if (isNaN(t.getTime())) return s;
+      return t.getFullYear() === m.getFullYear() && t.getMonth() === m.getMonth() ? s + (r.cost ?? 0) : s;
+    }, 0);
+  });
+  const months = Array.from({ length: 12 }, (_, i) => String(((now.getMonth() - 11 + i) % 12 + 12) % 12 + 1));
   const soh = [100, 99.6, 99.1, 98.7, 98.4, 98.0, 97.7, 97.4, 97.1, 96.9, 96.7, 96.5];
+  const totalCostStr = fmt(cost.reduce((a, b) => a + b, 0));
+
   return (
     <div className="ev-screen">
       <NexusBg />
-      <AppHeader kicker="STATS / 統計" title="ダッシュボード" subtitle="2025-06 〜 2026-05 (12ヶ月)" right={<Chip tone="cyan">同期 2分前</Chip>} />
+      <AppHeader kicker="STATS / 統計" title="ダッシュボード" subtitle={`${sessions} 件の充電履歴`} right={<Chip tone="cyan">{sessions > 0 ? "実データ" : "mock"}</Chip>} />
 
       <div className="ev-screen__body pt-1">
         <div className="grid grid-cols-2 gap-3">
-          <StatTile label="累計走行" value="24,387" unit="km" delta="+1,247" tone="cyan" />
-          <StatTile label="平均電費" value="6.2" unit="km/kWh" delta="+0.3" tone="plasma" />
-          <StatTile label="月次コスト" value="5,800" unit="¥" delta="+8.4%" tone="warning" />
-          <StatTile label="SOH" value="96.5" unit="%" delta="-0.2" tone="violet" />
+          <StatTile label="累計 kWh" value={fmt(totalKwh, 1)} unit="kWh" delta={`${sessions} 回`} tone="cyan" />
+          <StatTile label="平均電費" value={avgEfficiency != null ? avgEfficiency.toFixed(1) : "—"} unit="km/kWh" tone="plasma" />
+          <StatTile label="累計コスト" value={fmt(totalCost)} unit="¥" tone="warning" />
+          <StatTile label="SOH" value={lastSoh != null ? lastSoh.toFixed(1) : "—"} unit="%" tone="violet" />
         </div>
 
         <Panel className="p-4 mt-3">
           <div className="flex items-baseline justify-between">
             <SectionTitle>月次コスト推移</SectionTitle>
-            <span className="font-mono text-[11px] text-[var(--color-text-muted)]">¥58,800 / 12mo</span>
+            <span className="font-mono text-[11px] text-[var(--color-text-muted)]">¥{totalCostStr} / 12mo</span>
           </div>
           <BarChart data={cost} labels={months} h={130} color="var(--color-signal-cyan)" />
         </Panel>
@@ -406,6 +457,31 @@ function TaxCard({ name, amount, sub, tone }) {
 /* ---------- 5. SETTINGS ---------- */
 
 function SettingsScreen() {
+  // L3 wire: GAS URL & outbox count from real stores
+  const gasUrl = useSettingsStore((s) => s.settings.gasUrl);
+  const outbox = useSyncStore((s) => s.outbox);
+  const flushOutbox = useSyncStore((s) => s.flushOutbox);
+  const pushToast = useToastStore((s) => s.push);
+  const pendingCount = outbox.filter((e) => e.status !== "acked").length;
+  const ackedCount = outbox.filter((e) => e.status === "acked").length;
+  const totalCount = outbox.length;
+  const isHealthy = !!gasUrl && pendingCount === 0;
+  const shortUrl = gasUrl ? `script.google.com/...${gasUrl.slice(-4)}` : "未設定";
+
+  const onSyncNow = async () => {
+    if (!gasUrl) {
+      pushToast?.({ kind: "error", title: "GAS URL 未設定", body: "先にエンドポイントを設定してください" });
+      return;
+    }
+    pushToast?.({ kind: "info", title: "同期中…", body: `${pendingCount} 件を送信` });
+    try {
+      const res = await flushOutbox(gasUrl);
+      pushToast?.({ kind: "ok", title: "同期完了", body: `${res.ackedCount} 件成功 / ${res.failedCount} 件失敗` });
+    } catch (e: any) {
+      pushToast?.({ kind: "error", title: "同期失敗", body: String(e?.message || e) });
+    }
+  };
+
   return (
     <div className="ev-screen">
       <NexusBg />
@@ -419,16 +495,16 @@ function SettingsScreen() {
             <div className="flex items-center justify-between">
               <div>
                 <div className="flex items-center gap-2">
-                  <span className="ev-status-dot is-ok" />
-                  <span className="text-[14px] text-[var(--color-text-bright)]">接続正常</span>
+                  <span className={`ev-status-dot ${isHealthy ? "is-ok" : "is-warn"}`} />
+                  <span className="text-[14px] text-[var(--color-text-bright)]">{isHealthy ? "接続正常" : pendingCount > 0 ? `保留 ${pendingCount} 件` : "未設定"}</span>
                 </div>
-                <div className="text-[11px] text-[var(--color-text-muted)] font-mono mt-1">最終同期 2分前 · 142 件 / 142 件</div>
+                <div className="text-[11px] text-[var(--color-text-muted)] font-mono mt-1">送信済 {ackedCount} 件 / 合計 {totalCount} 件</div>
               </div>
-              <button className="ev-cta-secondary">今すぐ同期</button>
+              <button className="ev-cta-secondary" onClick={onSyncNow} type="button">今すぐ同期</button>
             </div>
             <div className="ev-settings-divider" />
-            <SettingsRow label="エンドポイント" value="script.google.com/...AKfy" mono />
-            <SettingsRow label="同期間隔" value="15 分" />
+            <SettingsRow label="エンドポイント" value={shortUrl} mono />
+            <SettingsRow label="保留中" value={`${pendingCount} 件`} />
           </Panel>
         </SectionGroup>
 
