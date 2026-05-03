@@ -29,9 +29,28 @@ const SettingsPanel = lazy(() => import("./components/settings/SettingsPanel.tsx
 const VehicleTab = lazy(() => import("./components/vehicle/VehicleTab.tsx").then((m) => ({ default: m.VehicleTab })));
 
 export default function App() {
-  if (typeof window !== "undefined" && new URLSearchParams(window.location.search).get("ui") === "v2") {
+  // NEXUS v2 が default。?ui=v1 で旧 UI (fallback / 緊急時の脱出口)
+  const isV1Fallback =
+    typeof window !== "undefined" &&
+    new URLSearchParams(window.location.search).get("ui") === "v1";
+
+  if (!isV1Fallback) {
     return (
-      <Suspense fallback={<div style={{ padding: 40, textAlign: "center", color: "#EAF2FF", background: "#04060D", minHeight: "100vh" }}>Loading NEXUS v2…</div>}>
+      <Suspense
+        fallback={
+          <div
+            style={{
+              padding: 40,
+              textAlign: "center",
+              color: "#EAF2FF",
+              background: "#04060D",
+              minHeight: "100vh",
+            }}
+          >
+            Loading NEXUS v2…
+          </div>
+        }
+      >
         <RedesignApp />
       </Suspense>
     );

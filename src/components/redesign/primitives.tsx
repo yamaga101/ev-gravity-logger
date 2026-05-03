@@ -11,6 +11,9 @@ import React from 'react';
 
 const { useState, useEffect, useRef, useMemo } = React;
 
+// NEXUS v2 nav context — RedesignApp が provide、BottomNav が consume
+const NavContext = React.createContext(null);
+
 /* ---------- Phone shell ---------- */
 function PhoneShell({ children, label, w = 412, h = 915, statusBar = "dark", note }) {
   return (
@@ -140,6 +143,7 @@ const NAV_ICONS = {
 };
 
 function BottomNav({ active = "charge" }) {
+  const navigate = React.useContext(NavContext);
   const tabs = [
     { id: "charge",   label: "充電" },
     { id: "history",  label: "履歴" },
@@ -153,7 +157,12 @@ function BottomNav({ active = "charge" }) {
         {tabs.map((t) => {
           const on = t.id === active;
           return (
-            <button key={t.id} className={`ev-tab ${on ? "is-active" : ""}`}>
+            <button
+              key={t.id}
+              className={`ev-tab ${on ? "is-active" : ""}`}
+              onClick={() => navigate?.(t.id)}
+              type="button"
+            >
               <span className="ev-tab__icon">{NAV_ICONS[t.id]}</span>
               <span className="ev-tab__label">{t.label}</span>
               {on && <span className="ev-tab__dot" />}
@@ -341,4 +350,4 @@ Object.assign(window, {
   Toast, MiniChart, BarChart, Field, FgServiceTag, SectionTitle,
 });
 
-export { PhoneShell, PhoneStatusBar, NexusBg, ReminderBanner, AppHeader, BottomNav, ProgressRing, Panel, StatTile, Chip, PrimaryCTA, Toast, MiniChart, BarChart, Field, FgServiceTag, SectionTitle };
+export { PhoneShell, PhoneStatusBar, NexusBg, ReminderBanner, AppHeader, BottomNav, ProgressRing, Panel, StatTile, Chip, PrimaryCTA, Toast, MiniChart, BarChart, Field, FgServiceTag, SectionTitle, NavContext };

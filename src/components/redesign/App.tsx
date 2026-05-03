@@ -1,8 +1,11 @@
 // @ts-nocheck
-// NEXUS v2 (Direction A) pilot entry — feature-flagged via ?ui=v2&screen=<name>
-// 既存 src/App.tsx は変更最小限、ここに切替ロジックを集約。
+// NEXUS v2 (Direction A) — production entry
+// 旧 App は ?ui=v1 で fallback。BottomNav タップで内部 state 切替。
+// useBackgroundGeolocation を root で 1 回呼ぶ → BG GPS PoC を死守 (5/6 評価まで)。
 
-import React from "react";
+import React, { useState, useEffect, useMemo } from "react";
+import { useBackgroundGeolocation } from "../../hooks/useBackgroundGeolocation";
+import { NavContext } from "./primitives";
 import {
   ChargingStartScreen,
   ChargingLiveScreen,
@@ -22,6 +25,7 @@ import {
   TabletDashboard,
 } from "./screens-sub";
 
+// screen キー (URL param 用) → component
 const SCREENS: Record<string, React.ComponentType> = {
   "charge-start": ChargingStartScreen,
   "charge-live": ChargingLiveScreen,
@@ -39,94 +43,50 @@ const SCREENS: Record<string, React.ComponentType> = {
   "tablet-dashboard": TabletDashboard,
 };
 
+// BottomNav の tab id → screen キー
+const NAV_TO_SCREEN: Record<string, string> = {
+  charge: "charge-start",
+  history: "history",
+  stats: "stats",
+  car: "vehicle",
+  settings: "settings",
+};
+
+const DEFAULT_SCREEN = "charge-start";
+
+function getInitialScreen(): string {
+  if (typeof window === "undefined") return DEFAULT_SCREEN;
+  const fromUrl = new URLSearchParams(window.location.search).get("screen");
+  return (fromUrl && SCREENS[fromUrl]) ? fromUrl : DEFAULT_SCREEN;
+}
+
 export default function RedesignApp() {
-  const params = new URLSearchParams(window.location.search);
-  const screen = params.get("screen") || "menu";
-  const Screen = SCREENS[screen];
+  // ⚡ PoC 死守: BG GPS hook を root で呼ぶ。これがないと 5/6 評価データが切れる
+  useBackgroundGeolocation();
 
-  if (!Screen) {
-    const groups: Array<{ title: string; keys: string[] }> = [
-      { title: "Charging", keys: ["charge-start", "charge-live", "charge-done"] },
-      { title: "Main", keys: ["history", "stats", "vehicle", "settings"] },
-      {
-        title: "Sub",
-        keys: ["maintenance", "inspection", "meter", "onboarding", "help"],
-      },
-      { title: "Other form factors", keys: ["drive-landscape", "tablet-dashboard"] },
-    ];
-    return (
-      <div
-        style={{
-          minHeight: "100vh",
-          background: "var(--color-surface-void, #04060D)",
-          color: "var(--color-text-bright, #EAF2FF)",
-          padding: "32px 20px",
-          fontFamily:
-            'var(--font-sans, "Inter", system-ui, sans-serif)',
-        }}
-      >
-        <div style={{ maxWidth: 720, margin: "0 auto" }}>
-          <h1
-            style={{
-              fontSize: 28,
-              fontFamily: 'var(--font-display, "Sora")',
-              margin: 0,
-              marginBottom: 8,
-            }}
-          >
-            EV Manager · NEXUS v2 — Pilot
-          </h1>
-          <p style={{ color: "var(--color-text-muted, #C4D2E8)", marginBottom: 24 }}>
-            URL に <code>?ui=v2&amp;screen=&lt;name&gt;</code> を付けて画面を選択。
-          </p>
-          {groups.map((g) => (
-            <div key={g.title} style={{ marginBottom: 20 }}>
-              <h2
-                style={{
-                  fontSize: 14,
-                  textTransform: "uppercase",
-                  letterSpacing: "0.1em",
-                  color: "var(--color-text-dim, #8597B3)",
-                  marginBottom: 8,
-                }}
-              >
-                {g.title}
-              </h2>
-              <div
-                style={{
-                  display: "grid",
-                  gridTemplateColumns: "repeat(auto-fill, minmax(180px, 1fr))",
-                  gap: 8,
-                }}
-              >
-                {g.keys.map((key) => (
-                  <a
-                    key={key}
-                    href={`?ui=v2&screen=${key}`}
-                    style={{
-                      padding: "12px 14px",
-                      background: "rgba(255,255,255,0.04)",
-                      border: "1px solid rgba(140,170,220,0.15)",
-                      borderRadius: 12,
-                      color: "var(--color-signal-cyan, #22E6FF)",
-                      textDecoration: "none",
-                      fontFamily: 'var(--font-mono, "JetBrains Mono")',
-                      fontSize: 13,
-                    }}
-                  >
-                    {key}
-                  </a>
-                ))}
-              </div>
-            </div>
-          ))}
-          <p style={{ marginTop: 32, fontSize: 12, color: "var(--color-text-dim, #8597B3)" }}>
-            Production への適用は段階移行: 現在は Pilot として旧 UI と並存。元 UI に戻すには <code>?ui=v2</code> を外してリロード。
-          </p>
-        </div>
-      </div>
-    );
-  }
+  const [active, setActive] = useState<string>(getInitialScreen);
 
-  return <Screen />;
+  // BottomNav の tab id を受けて画面切替
+  const navigate = useMemo(
+    () => (navKey: string) => {
+      const next = NAV_TO_SCREEN[navKey] || navKey;
+      if (SCREENS[next]) setActive(next);
+    },
+    [],
+  );
+
+  // ?screen=<name> で直接アクセスもサポート (戻る/進むで反応)
+  useEffect(() => {
+    const onPop = () => setActive(getInitialScreen());
+    window.addEventListener("popstate", onPop);
+    return () => window.removeEventListener("popstate", onPop);
+  }, []);
+
+  const Screen = SCREENS[active] || ChargingStartScreen;
+
+  return (
+    <NavContext.Provider value={navigate}>
+      <Screen />
+    </NavContext.Provider>
+  );
 }

@@ -514,4 +514,4 @@ Object.assign(window, {
   HistoryScreen, StatsScreen, VehicleScreen, SettingsScreen,
 });
 
-export { ChargingStartScreen, ChargingLiveScreen, ChargingCompleteScreen, HistoryScreen, StatsScreen, VehicleScreen, SettingsScreen };
+export { ChargingStartScreen, ChargingLiveScreen, ChargingCompleteScreen, HistoryScreen, StatsScreen, VehicleScreen, SettingsScreen, FavRow };

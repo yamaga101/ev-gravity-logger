@@ -3,7 +3,8 @@
 // canvas-only な DriveLogLandscape / TabletDashboard も同梱 (production では未使用)
 
 import React from 'react';
-import { NexusBg, ReminderBanner, AppHeader, BottomNav, Panel, Chip, PrimaryCTA, StatTile, Field, SectionTitle, ProgressRing, FgServiceTag } from './primitives';
+import { NexusBg, ReminderBanner, AppHeader, BottomNav, Panel, Chip, PrimaryCTA, StatTile, Field, SectionTitle, ProgressRing, FgServiceTag, MiniChart, BarChart } from './primitives';
+import { FavRow } from './screens-main';
 
 /* ============================================================
    EV Manager — Sub screens (Maintenance, Inspection, Meter, Onboarding, Help) +
