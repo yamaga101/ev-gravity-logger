@@ -1,10 +1,10 @@
 import { ENV_GAS_SHARED_TOKEN, ENV_GEMINI_API_KEY } from "./env";
 
-export const APP_VERSION = "4.7.1";
+export const APP_VERSION = "4.7.2";
 export const PRE_CONFIGURED_GAS_URL = "https://script.google.com/macros/s/AKfycbzvSN49XRzYNB0N6QUiIiBdkpvIaeMhHC1xPJHnEoA2rT4ytz4BwRHAjwcbD8_uT1uJ/exec";
 export const DEFAULT_GAS_SHARED_TOKEN = ENV_GAS_SHARED_TOKEN;
 export const DEFAULT_GEMINI_API_KEY = ENV_GEMINI_API_KEY;
-export const SPREADSHEET_URL = "https://docs.google.com/spreadsheets/d/1Cvn4oUoN7lsd5VW0MufgwSwrdNC-LE9VbPwZ2eG0cvA";
+export const SPREADSHEET_URL = "https://docs.google.com/spreadsheets/d/1HK8C4C1IeK9Lf0UvDweqIkksEv6Jyer3jx_UNRSlceA/edit";
 
 export const STORAGE_KEY_DATA = "ev_gravity_data_v1";
 export const STORAGE_KEY_SETTINGS = "ev_gravity_settings_v1";

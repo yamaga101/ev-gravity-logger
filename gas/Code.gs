@@ -18,7 +18,7 @@
  *   driveLog     : id | date | departure | destination | distance | startOdometer | endOdometer | efficiency | purpose | memo
  */
 
-var GAS_VERSION = "4.7.1";
+var GAS_VERSION = "4.7.2";
 var SPREADSHEET_ID = "1HK8C4C1IeK9Lf0UvDweqIkksEv6Jyer3jx_UNRSlceA";
 var SHARED_TOKEN_PROPERTY = "EV_MANAGER_SHARED_TOKEN";
 var IDEMPOTENCY_PREFIX = "idem:";
