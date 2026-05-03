@@ -134,7 +134,7 @@ export default function App() {
       <div className="vignette-overlay" aria-hidden="true" />
 
       {/* Header */}
-      <header className="sticky top-0 z-40 backdrop-blur-xl border-b border-border-glow px-4 py-3" role="banner" style={{ background: "linear-gradient(180deg, rgba(0, 240, 255, 0.03) 0%, rgba(10, 15, 30, 0.95) 100%)" }}>
+      <header className="sticky top-0 z-40 backdrop-blur-xl border-b border-border-glow px-4 py-3 pt-safe" role="banner" style={{ background: "linear-gradient(180deg, rgba(0, 240, 255, 0.03) 0%, rgba(10, 15, 30, 0.95) 100%)" }}>
         <div className="max-w-lg mx-auto flex justify-between items-center">
           <div className="flex items-center gap-3">
             <div className="flex items-center gap-1.5">
@@ -211,7 +211,7 @@ export default function App() {
       <ReminderBanner t={t} />
 
       {/* Main Content */}
-      <main className="max-w-lg mx-auto px-4 py-4 pb-20 relative z-10" role="main">
+      <main className="max-w-lg mx-auto px-4 py-4 pb-nav relative z-10" role="main">
         <ErrorBoundary>
           {activeTab === "charging" && (
             <>

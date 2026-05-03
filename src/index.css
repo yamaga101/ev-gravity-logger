@@ -531,6 +531,26 @@ body {
   padding-bottom: env(safe-area-inset-bottom, 0px);
 }
 
+.pt-safe {
+  padding-top: env(safe-area-inset-top, 0px);
+}
+
+.pl-safe {
+  padding-left: env(safe-area-inset-left, 0px);
+}
+
+.pr-safe {
+  padding-right: env(safe-area-inset-right, 0px);
+}
+
+.bottom-safe {
+  bottom: max(0.75rem, calc(env(safe-area-inset-bottom, 0px) + 0.5rem));
+}
+
+.pb-nav {
+  padding-bottom: calc(5rem + env(safe-area-inset-bottom, 0px) + 1rem);
+}
+
 /* Monospace numbers */
 .font-mono-data {
   font-family: var(--font-mono);

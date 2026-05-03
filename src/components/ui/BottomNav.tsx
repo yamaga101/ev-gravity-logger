@@ -25,11 +25,11 @@ const tabs: { id: TabId; icon: typeof BatteryCharging; labelKey: keyof Translati
 export function BottomNav({ activeTab, onTabChange, t }: BottomNavProps) {
   return (
     <nav
-      className="fixed bottom-3 left-3 right-3 z-50"
+      className="fixed bottom-safe left-3 right-3 z-50"
       aria-label="Main navigation"
       role="navigation"
     >
-      <div className="max-w-lg mx-auto glass-panel rounded-2xl border border-border-subtle pb-safe">
+      <div className="max-w-lg mx-auto glass-panel rounded-2xl border border-border-subtle">
         <div className="flex justify-around items-center h-14">
           {tabs.map(({ id, icon: Icon, labelKey }) => {
             const isActive = activeTab === id;
