@@ -1,10 +1,10 @@
-// @ts-nocheck
 // NEXUS v2 (Direction A) — production entry
 // 旧 App は ?ui=v1 で fallback。BottomNav タップで内部 state 切替。
 // useBackgroundGeolocation を root で 1 回呼ぶ → BG GPS PoC を死守 (5/6 評価まで)。
 
 import React, { useState, useEffect, useMemo } from "react";
 import { useBackgroundGeolocation } from "../../hooks/useBackgroundGeolocation";
+import { useChargingStore } from "../../store/useChargingStore";
 import { NavContext } from "./primitives";
 import {
   ChargingStartScreen,
@@ -65,14 +65,19 @@ export default function RedesignApp() {
   useBackgroundGeolocation();
 
   const [active, setActive] = useState<string>(getInitialScreen);
+  const activeSession = useChargingStore((s) => s.activeSession);
 
-  // BottomNav の tab id を受けて画面切替
+  // BottomNav の tab id を受けて画面切替。
+  // 充電タブは activeSession 有無で start/live を自動選択 (state machine)
   const navigate = useMemo(
     () => (navKey: string) => {
-      const next = NAV_TO_SCREEN[navKey] || navKey;
+      let next = NAV_TO_SCREEN[navKey] || navKey;
+      if (navKey === "charge") {
+        next = activeSession ? "charge-live" : "charge-start";
+      }
       if (SCREENS[next]) setActive(next);
     },
-    [],
+    [activeSession],
   );
 
   // ?screen=<name> で直接アクセスもサポート (戻る/進むで反応)

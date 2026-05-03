@@ -4,11 +4,12 @@
 // BG GPS toggle は **PoC 期間中は visual のみ未配線** (5/6 評価まで service を触らない)。
 
 import React from 'react';
-import { NexusBg, ReminderBanner, AppHeader, BottomNav, Panel, ProgressRing, Chip, PrimaryCTA, StatTile, MiniChart, BarChart, Field, FgServiceTag, SectionTitle, Toast } from './primitives';
+import { NexusBg, ReminderBanner, AppHeader, BottomNav, Panel, ProgressRing, Chip, PrimaryCTA, StatTile, MiniChart, BarChart, Field, FgServiceTag, SectionTitle, Toast, NavContext } from './primitives';
 import { useSettingsStore } from '../../store/useSettingsStore';
 import { useSyncStore } from '../../store/useSyncStore';
 import { useToastStore } from '../../store/useToastStore';
 import { useChargingStore } from '../../store/useChargingStore';
+import { useVehicleStore } from '../../store/useVehicleStore';
 
 /* ============================================================
    EV Manager — Screen modules (主要 5 タブ)
@@ -17,11 +18,36 @@ import { useChargingStore } from '../../store/useChargingStore';
 /* ---------- 1. CHARGING — three states ---------- */
 
 function ChargingStartScreen() {
+  // L3 wire: 充電開始ボタンで activeSession を作成
+  const startSession = useChargingStore((s) => s.startSession);
+  const settings = useSettingsStore((s) => s.settings);
+  const pushToast = useToastStore((s) => s.push);
+  const navigate = React.useContext(NavContext);
+
+  const handleStart = () => {
+    const session = {
+      id: `s-${Date.now()}`,
+      startTime: new Date().toISOString(),
+      odometer: 0,
+      startBattery: 38,
+      startRange: 0,
+      efficiency: 6.0,
+      startedAt: Date.now(),
+      locationName: "クイック開始",
+      voltage: 400,
+      amperage: 125,
+      kw: 50,
+    };
+    startSession(session);
+    pushToast?.({ kind: "ok", title: "充電開始", body: session.locationName });
+    navigate?.("charge-live");
+  };
+
   return (
     <div className="ev-screen">
       <NexusBg />
-      <ReminderBanner kind="warning" icon="⚠" title="次回車検まで 47 日" meta="2026-06-19 期限 · タップして確認" />
-      <AppHeader kicker="CHARGING / 充電開始" title="充電を記録" subtitle="ステーション選択後、開始前 SOC を入力" right={<Chip tone="cyan">GAS 同期 OK</Chip>} />
+      <ReminderBanner kind="warning" icon="⚠" title="充電セッション準備" meta={settings.gasUrl ? "GAS 同期: 設定済" : "GAS 未設定 — Settings へ"} />
+      <AppHeader kicker="CHARGING / 充電開始" title="充電を記録" subtitle="ステーション選択後、開始前 SOC を入力" right={<Chip tone={settings.gasUrl ? "cyan" : "warning"}>{settings.gasUrl ? "GAS OK" : "未設定"}</Chip>} />
 
       <div className="ev-screen__body">
         <Panel className="p-5">
@@ -50,8 +76,8 @@ function ChargingStartScreen() {
           </div>
         </Panel>
 
-        <div className="mt-4">
-          <PrimaryCTA tone="plasma" glyph={<BoltGlyph />} sub="GPS で充電器を自動検出済み">充電開始</PrimaryCTA>
+        <div className="mt-4" onClick={handleStart} role="button" style={{ cursor: "pointer" }}>
+          <PrimaryCTA tone="plasma" glyph={<BoltGlyph />} sub="クイック開始 (詳細入力は Settings から)">充電開始</PrimaryCTA>
         </div>
       </div>
 
@@ -76,37 +102,91 @@ const BoltGlyph = () => (
 );
 
 function ChargingLiveScreen() {
+  // L3 wire: activeSession + リアルタイム経過時間 + 充電終了ボタン
+  const activeSession = useChargingStore((s) => s.activeSession);
+  const clearSession = useChargingStore((s) => s.clearSession);
+  const addRecord = useChargingStore((s) => s.addRecord);
+  const pushToast = useToastStore((s) => s.push);
+  const navigate = React.useContext(NavContext);
+  const [now, setNow] = React.useState(Date.now());
+
+  React.useEffect(() => {
+    const t = setInterval(() => setNow(Date.now()), 1000);
+    return () => clearInterval(t);
+  }, []);
+
+  if (!activeSession) {
+    return (
+      <div className="ev-screen">
+        <NexusBg />
+        <div className="ev-screen__body" style={{ padding: 40, textAlign: "center" }}>
+          <div className="text-[14px] text-[var(--color-text-muted)]">アクティブな充電セッションがありません</div>
+          <div className="mt-4" onClick={() => navigate?.("charge-start")} role="button" style={{ cursor: "pointer" }}>
+            <PrimaryCTA tone="cyan">充電を開始する</PrimaryCTA>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  const elapsedSec = Math.max(0, Math.floor((now - activeSession.startedAt) / 1000));
+  const mm = String(Math.floor(elapsedSec / 60)).padStart(2, "0");
+  const ss = String(elapsedSec % 60).padStart(2, "0");
+  // ざっくり推定: kw を base に経過時間で kWh 推定 (実機では別の真値、ここは UX のみ)
+  const kw = typeof activeSession.kw === "number" ? activeSession.kw : parseFloat(activeSession.kw as any) || 50;
+  const estKwh = (kw * elapsedSec) / 3600;
+  const estSocAdd = activeSession.efficiency > 0 ? Math.min(80 - activeSession.startBattery, estKwh / 0.6) : 0;
+  const currentSoc = Math.min(100, activeSession.startBattery + estSocAdd);
+  const isDC = kw >= 30;
+
+  const handleEnd = () => {
+    const record: any = {
+      ...activeSession,
+      endTime: new Date().toISOString(),
+      endBattery: Math.round(currentSoc),
+      endRange: 0,
+      chargedKwh: Math.round(estKwh * 10) / 10,
+      cost: Math.round(estKwh * 27.5),
+      duration: elapsedSec,
+      chargeSpeed: kw,
+    };
+    addRecord(record);
+    clearSession();
+    pushToast?.({ kind: "ok", title: "充電完了", body: `${record.chargedKwh} kWh / ¥${record.cost}` });
+    navigate?.("charge-done");
+  };
+
   return (
     <div className="ev-screen">
       <NexusBg />
       <div className="ev-screen__body ev-charging-live">
         <div className="text-center mt-2">
           <div className="text-[10px] tracking-[0.3em] text-[var(--color-charge-plasma)] font-mono uppercase">CHARGING IN PROGRESS</div>
-          <div className="text-[12px] text-[var(--color-text-muted)] mt-1 font-mono">e-Mobility Power 90kW · DC急速</div>
+          <div className="text-[12px] text-[var(--color-text-muted)] mt-1 font-mono">{activeSession.locationName} · {isDC ? "DC急速" : "AC普通"}</div>
         </div>
 
         <div className="flex justify-center mt-6">
           <ProgressRing
-            value={62} size={240} stroke={12}
+            value={currentSoc} size={240} stroke={12}
             color="var(--color-charge-plasma)"
-            label={<><span className="text-[64px] font-display font-light leading-none">62</span><span className="text-[24px] font-display ml-1">%</span></>}
-            sublabel={<span className="font-mono text-[12px] text-[var(--color-text-muted)]">+24% / 38 → 62</span>}
+            label={<><span className="text-[64px] font-display font-light leading-none">{Math.round(currentSoc)}</span><span className="text-[24px] font-display ml-1">%</span></>}
+            sublabel={<span className="font-mono text-[12px] text-[var(--color-text-muted)]">+{Math.round(currentSoc - activeSession.startBattery)}% / {activeSession.startBattery} → {Math.round(currentSoc)}</span>}
           />
         </div>
 
         <div className="grid grid-cols-3 gap-2 mt-7">
-          <LiveMetric label="経過" value="14:23" unit="" mono />
-          <LiveMetric label="kWh" value="18.7" unit="kWh" />
-          <LiveMetric label="実効" value="78.4" unit="kW" />
+          <LiveMetric label="経過" value={`${mm}:${ss}`} unit="" />
+          <LiveMetric label="kWh" value={estKwh.toFixed(1)} unit="kWh" />
+          <LiveMetric label="実効" value={kw.toFixed(1)} unit="kW" />
         </div>
 
         <Panel className="p-4 mt-4">
           <div className="flex items-center justify-between">
-            <span className="text-[12px] text-[var(--color-text-muted)] uppercase tracking-wider">予測 80% 到達</span>
-            <span className="font-mono text-[var(--color-charge-plasma)]">+ 06:12</span>
+            <span className="text-[12px] text-[var(--color-text-muted)] uppercase tracking-wider">目標 80% に到達まで</span>
+            <span className="font-mono text-[var(--color-charge-plasma)]">{currentSoc >= 80 ? "達成" : "進行中"}</span>
           </div>
           <div className="ev-progress-track mt-3">
-            <div className="ev-progress-fill" style={{ width: "62%" }} />
+            <div className="ev-progress-fill" style={{ width: `${currentSoc}%` }} />
             <div className="ev-progress-target" style={{ left: "80%" }}>
               <div className="ev-progress-target__line" />
               <div className="ev-progress-target__label">80</div>
@@ -119,9 +199,9 @@ function ChargingLiveScreen() {
 
         <div className="grid grid-cols-2 gap-3 mt-3">
           <SecondaryCTA>一時停止</SecondaryCTA>
-          <button className="ev-cta ev-cta--danger">
+          <button className="ev-cta ev-cta--danger" onClick={handleEnd} type="button">
             <span className="ev-cta__label">充電終了</span>
-            <span className="ev-cta__sub">¥514 累計</span>
+            <span className="ev-cta__sub">¥{Math.round(estKwh * 27.5)} 累計</span>
           </button>
         </div>
       </div>
@@ -144,36 +224,65 @@ function SecondaryCTA({ children }) {
 }
 
 function ChargingCompleteScreen() {
+  // L3 wire: 直近 history[0] から完了サマリ表示
+  const lastRecord = useChargingStore((s) => s.history[0]);
+  const navigate = React.useContext(NavContext);
+
+  if (!lastRecord) {
+    return (
+      <div className="ev-screen">
+        <NexusBg />
+        <div className="ev-screen__body" style={{ padding: 40, textAlign: "center" }}>
+          <div className="text-[14px] text-[var(--color-text-muted)]">直近の充電記録がありません</div>
+          <div className="mt-4" onClick={() => navigate?.("history")} role="button" style={{ cursor: "pointer" }}>
+            <PrimaryCTA tone="cyan">履歴を見る</PrimaryCTA>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  const kwh = lastRecord.chargedKwh ?? 0;
+  const cost = lastRecord.cost ?? 0;
+  const unitCost = kwh > 0 ? Math.round(cost / kwh) : 0;
+  const startSoc = lastRecord.startBattery ?? 0;
+  const endSoc = lastRecord.endBattery ?? 0;
+  const durationSec = lastRecord.duration ?? 0;
+  const mm = String(Math.floor(durationSec / 60)).padStart(2, "0");
+  const ss = String(durationSec % 60).padStart(2, "0");
+
   return (
     <div className="ev-screen">
       <NexusBg />
-      <Toast kind="ok" title="充電完了" body="GAS sync · 履歴に保存しました" />
+      <Toast kind="ok" title="充電完了" body="履歴に保存しました" />
       <div className="ev-screen__body pt-12">
         <div className="text-center">
           <div className="text-[10px] tracking-[0.3em] text-[var(--color-text-muted)] font-mono uppercase">SESSION COMPLETE</div>
-          <div className="text-[68px] font-display font-light leading-none mt-2 text-[var(--color-charge-plasma)]" style={{textShadow: "0 0 24px rgba(77,255,155,0.4)"}}>27.4</div>
+          <div className="text-[68px] font-display font-light leading-none mt-2 text-[var(--color-charge-plasma)]" style={{textShadow: "0 0 24px rgba(77,255,155,0.4)"}}>{kwh.toFixed(1)}</div>
           <div className="text-[14px] text-[var(--color-text-muted)] font-mono">kWh 充電</div>
         </div>
 
         <div className="grid grid-cols-2 gap-3 mt-7">
-          <SummaryCell label="料金" value="¥753" sub="¥27.5/min × 27:23" />
-          <SummaryCell label="kWh 単価" value="¥27.5" sub="今月平均 ¥29.8" tone="cyan" />
-          <SummaryCell label="開始 → 終了" value="38 → 80%" sub="+42pp" />
-          <SummaryCell label="経過時間" value="27:23" sub="実効 60.0kW" />
+          <SummaryCell label="料金" value={`¥${cost.toLocaleString()}`} sub={`¥${unitCost}/kWh`} />
+          <SummaryCell label="kWh 単価" value={`¥${unitCost}`} sub={`実効 ${(lastRecord.chargeSpeed ?? 0).toFixed(1)}kW`} tone="cyan" />
+          <SummaryCell label="開始 → 終了" value={`${startSoc} → ${endSoc}%`} sub={`+${endSoc - startSoc}pp`} />
+          <SummaryCell label="経過時間" value={`${mm}:${ss}`} sub={lastRecord.locationName || "—"} />
         </div>
 
         <Panel className="p-4 mt-4">
           <SectionTitle>場所</SectionTitle>
           <div className="ev-map-placeholder mt-2">
             <div className="ev-map-pin" />
-            <div className="text-[11px] font-mono text-[var(--color-text-muted)]">35.6541, 138.9762 · 道の駅 川場田園プラザ</div>
+            <div className="text-[11px] font-mono text-[var(--color-text-muted)]">{lastRecord.locationName || "—"}</div>
           </div>
           <button className="ev-link mt-3">★ お気に入りに追加</button>
         </Panel>
 
         <div className="grid grid-cols-2 gap-3 mt-3">
           <SecondaryCTA>メモ追加</SecondaryCTA>
-          <PrimaryCTA tone="cyan">完了</PrimaryCTA>
+          <div onClick={() => navigate?.("history")} role="button" style={{ cursor: "pointer" }}>
+            <PrimaryCTA tone="cyan">完了</PrimaryCTA>
+          </div>
         </div>
       </div>
       <BottomNav active="charge" />
@@ -355,44 +464,91 @@ function FavRow({ rank, name, count, avg }) {
 /* ---------- 4. VEHICLE ---------- */
 
 function VehicleScreen() {
+  // L3 wire: 実 vehicle store + charging history から表示
+  const registration = useVehicleStore((s) => s.registration);
+  const insuranceRecords = useVehicleStore((s) => s.insuranceRecords);
+  const taxRecords = useVehicleStore((s) => s.taxRecords);
+  const history = useChargingStore((s) => s.history);
+
+  const title = registration?.model || "車両未登録";
+  const subtitle = registration
+    ? [registration.year ? `${registration.year}年式` : null, registration.purchaseDate ? `購入 ${registration.purchaseDate.slice(0, 7)}` : null]
+        .filter(Boolean).join(" · ")
+    : "Settings から登録";
+  const lastOdometer = history[0]?.odometer ?? null;
+  const lastSoh = history.find((r) => typeof r.soh === "number")?.soh ?? null;
+
+  // 次回車検: registration.expiryDate (ISO 文字列) からの残日数
+  const expiryDate = registration?.expiryDate || null;
+  const daysToExpiry = expiryDate ? Math.max(0, Math.ceil((new Date(expiryDate).getTime() - Date.now()) / 86400000)) : null;
+  const expiryProgress = daysToExpiry != null ? Math.max(0, Math.min(100, 100 - (daysToExpiry / 365) * 100)) : 0;
+  const expiryTone = daysToExpiry != null && daysToExpiry < 60 ? "warning" : "default";
+
+  // 加入中保険 (endDate 未到達 + 最新)
+  const now = Date.now();
+  const activeInsurance = insuranceRecords
+    .filter((r) => r.endDate && new Date(r.endDate).getTime() > now)
+    .sort((a, b) => (b.startDate || "").localeCompare(a.startDate || ""))[0];
+
+  // 税金 (最新 2 件)
+  const taxByType = (type: string) => taxRecords.filter((t) => t.taxType === type)[0];
+  const automobileTax = taxByType("automobile");
+  const weightTax = taxByType("weight");
+
   return (
     <div className="ev-screen">
       <NexusBg />
-      <AppHeader kicker="VEHICLE / 車両" title="ニッサン リーフ e+" subtitle="ZE1 · 2022年式 · 購入 2023-04" />
+      <AppHeader kicker="VEHICLE / 車両" title={title} subtitle={subtitle || "—"} />
 
       <div className="ev-screen__body pt-1">
         {/* Hero card */}
         <Panel className="p-5 ev-vehicle-hero" glow>
           <div className="ev-vehicle-illust">
             <div className="ev-vehicle-illust__inner" aria-label="vehicle photo placeholder">
-              <span className="font-mono text-[10px] text-[var(--color-text-dim)]">[ vehicle photo ]</span>
+              <span className="font-mono text-[10px] text-[var(--color-text-dim)]">{registration?.plateNumber || "[ vehicle photo ]"}</span>
             </div>
           </div>
           <div className="grid grid-cols-3 gap-3 mt-4">
-            <HeroStat label="ODO" value="24,387" unit="km" />
-            <HeroStat label="SOH" value="96.5" unit="%" />
-            <HeroStat label="次回車検" value="47" unit="日" tone="warning" />
+            <HeroStat label="ODO" value={lastOdometer != null ? lastOdometer.toLocaleString() : "—"} unit="km" />
+            <HeroStat label="SOH" value={lastSoh != null ? lastSoh.toFixed(1) : "—"} unit="%" />
+            <HeroStat label="次回車検" value={daysToExpiry != null ? String(daysToExpiry) : "—"} unit="日" tone={expiryTone} />
           </div>
         </Panel>
 
         <SectionGroup title="保険" sub="Insurance" action="履歴">
           <Panel className="p-4">
-            <div className="flex items-baseline justify-between">
-              <div className="text-[14px] text-[var(--color-text-bright)] font-medium">ソニー損保 · 一般車両</div>
-              <Chip tone="cyan" solid>加入中</Chip>
-            </div>
-            <div className="grid grid-cols-3 gap-3 mt-3 font-mono text-[12px]">
-              <InfoCell label="満期" value="2026-12-15" />
-              <InfoCell label="月額" value="¥4,820" />
-              <InfoCell label="等級" value="20 (60%)" />
-            </div>
+            {activeInsurance ? (
+              <>
+                <div className="flex items-baseline justify-between">
+                  <div className="text-[14px] text-[var(--color-text-bright)] font-medium">{activeInsurance.provider} · {activeInsurance.coverageSummary}</div>
+                  <Chip tone="cyan" solid>加入中</Chip>
+                </div>
+                <div className="grid grid-cols-3 gap-3 mt-3 font-mono text-[12px]">
+                  <InfoCell label="満期" value={activeInsurance.endDate} />
+                  <InfoCell label="月額" value={`¥${(activeInsurance.premium ?? 0).toLocaleString()}`} />
+                  <InfoCell label="種別" value={activeInsurance.type === "mandatory" ? "自賠責" : "任意"} />
+                </div>
+              </>
+            ) : (
+              <div className="text-[12px] text-[var(--color-text-muted)]">加入中の保険なし · Settings から追加</div>
+            )}
           </Panel>
         </SectionGroup>
 
         <SectionGroup title="税金" sub="Tax">
           <div className="grid grid-cols-2 gap-3">
-            <TaxCard name="自動車税" amount="¥0" sub="EV 免税" tone="plasma" />
-            <TaxCard name="重量税" amount="¥0" sub="2026-06 (車検時)" tone="cyan" />
+            <TaxCard
+              name="自動車税"
+              amount={automobileTax ? `¥${automobileTax.amount.toLocaleString()}` : "¥0"}
+              sub={automobileTax ? `期限 ${automobileTax.dueDate}` : "EV 免税"}
+              tone="plasma"
+            />
+            <TaxCard
+              name="重量税"
+              amount={weightTax ? `¥${weightTax.amount.toLocaleString()}` : "¥0"}
+              sub={weightTax ? `期限 ${weightTax.dueDate}` : "車検時"}
+              tone="cyan"
+            />
           </div>
         </SectionGroup>
 
@@ -401,9 +557,16 @@ function VehicleScreen() {
             <div className="flex items-center justify-between">
               <div>
                 <div className="text-[14px] text-[var(--color-text-bright)]">次回車検</div>
-                <div className="text-[11px] text-[var(--color-text-muted)] font-mono">2026-06-19 · 残り 47 日</div>
+                <div className="text-[11px] text-[var(--color-text-muted)] font-mono">{expiryDate || "未登録"}{daysToExpiry != null ? ` · 残り ${daysToExpiry} 日` : ""}</div>
               </div>
-              <ProgressRing value={87} size={56} stroke={5} color="var(--color-state-warning)" label={<span className="font-mono text-[11px]">87%</span>} glow={false} />
+              <ProgressRing
+                value={expiryProgress}
+                size={56}
+                stroke={5}
+                color={expiryTone === "warning" ? "var(--color-state-warning)" : "var(--color-signal-cyan)"}
+                label={<span className="font-mono text-[11px]">{Math.round(expiryProgress)}%</span>}
+                glow={false}
+              />
             </div>
           </Panel>
         </SectionGroup>

@@ -12,7 +12,7 @@ import React from 'react';
 const { useState, useEffect, useRef, useMemo } = React;
 
 // NEXUS v2 nav context — RedesignApp が provide、BottomNav が consume
-const NavContext = React.createContext(null);
+const NavContext: React.Context<((key: string) => void) | null> = React.createContext<((key: string) => void) | null>(null);
 
 /* ---------- Phone shell ---------- */
 function PhoneShell({ children, label, w = 412, h = 915, statusBar = "dark", note }) {
