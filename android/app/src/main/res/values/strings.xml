@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">EV Manager</string>
+    <string name="title_activity_main">EV Manager</string>
+    <string name="package_name">jp.gmail.yamaga101.evmanager</string>
+    <string name="custom_url_scheme">jp.gmail.yamaga101.evmanager</string>
+</resources>
