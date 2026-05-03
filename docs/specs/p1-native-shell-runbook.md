@@ -56,11 +56,12 @@ npx cap add android
 
 ## Phase 3: JSON import 画面の native 対応 (Claude 担当)
 
-既存 `SettingsPanel.tsx` の JSON export/import は **そのまま** Capacitor で動く (Web API の `<input type="file">` と Blob/URL.createObjectURL を Capacitor が転送)。
+既存 `SettingsPanel.tsx` の JSON export/import は **そのまま** Capacitor で動く (Web API の `<input type="file">` と Blob/URL.createObjectURL を Capacitor が転送)。コード変更不要。
 
-ただし Token 保管は `@capacitor/preferences` (EncryptedSharedPreferences) に変更:
-- `useSettingsStore` の `gasSharedToken` 永続化先を localStorage → Preferences plugin
-- web fallback 用に `Capacitor.isNativePlatform()` で分岐
+### Token 保管の Preferences 切替は P2 に延期
+- WebView の localStorage はアプリサンドボックス内 (root されない限り保護)
+- 個人用アプリで単独利用なら十分
+- zustand persist storage 独自実装は P2 BG GPS 同時にまとめて実施 (差分大なので分離した方が事故少)
 
 ---
 
