@@ -10,6 +10,7 @@ import { useSyncStore } from '../../store/useSyncStore';
 import { useToastStore } from '../../store/useToastStore';
 import { useChargingStore } from '../../store/useChargingStore';
 import { useVehicleStore } from '../../store/useVehicleStore';
+import { exportPocSamples, clearPocSamples } from '../../hooks/useBackgroundGeolocation';
 
 /* ============================================================
    EV Manager — Screen modules (主要 5 タブ)
@@ -695,6 +696,7 @@ function SettingsScreen() {
               </span>
             </div>
           </Panel>
+          <BgPocDebugPanel />
         </SectionGroup>
 
         <SectionGroup title="データ" sub="Export / Import">
@@ -745,6 +747,92 @@ function Toggle({ on }) {
     <span className={`ev-toggle ${on ? "is-on" : ""}`}>
       <span className="ev-toggle__thumb" />
     </span>
+  );
+}
+
+// PoC 期間 (5/6 評価まで) 中だけ表示する移動ログ debug パネル。
+// localStorage を 2 秒ごとに poll → 件数 / 最終 ts / activity を表示。
+// JSON download + クリアで端末から PC に持ち出して分析できる。
+function BgPocDebugPanel() {
+  const pushToast = useToastStore((s) => s.push);
+  const [snapshot, setSnapshot] = React.useState<{ count: number; lastTs: string | null; lastActivity: string | null }>({
+    count: 0,
+    lastTs: null,
+    lastActivity: null,
+  });
+
+  React.useEffect(() => {
+    const refresh = () => {
+      const arr = exportPocSamples();
+      const last = arr[arr.length - 1];
+      setSnapshot({
+        count: arr.length,
+        lastTs: last?.ts ?? null,
+        lastActivity: last?.activity ?? null,
+      });
+    };
+    refresh();
+    const id = setInterval(refresh, 2000);
+    return () => clearInterval(id);
+  }, []);
+
+  const lastTsLabel = snapshot.lastTs
+    ? new Date(snapshot.lastTs).toLocaleString("ja-JP", { hour12: false })
+    : "—";
+
+  const onExport = () => {
+    const samples = exportPocSamples();
+    if (samples.length === 0) {
+      pushToast?.({ kind: "info", title: "PoC サンプル空", body: "BG ログは 0 件です" });
+      return;
+    }
+    try {
+      const blob = new Blob([JSON.stringify(samples, null, 2)], { type: "application/json" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      const stamp = new Date().toISOString().replace(/[:.]/g, "-");
+      a.href = url;
+      a.download = `bg-poc-${stamp}.json`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
+      pushToast?.({ kind: "ok", title: "PoC ログ出力", body: `${samples.length} 件を JSON で保存` });
+    } catch (e: any) {
+      pushToast?.({ kind: "error", title: "PoC 出力失敗", body: String(e?.message || e) });
+    }
+  };
+
+  const onClear = () => {
+    if (snapshot.count === 0) return;
+    if (!confirm(`PoC ログ ${snapshot.count} 件を削除しますか? (元に戻せません)`)) return;
+    clearPocSamples();
+    setSnapshot({ count: 0, lastTs: null, lastActivity: null });
+    pushToast?.({ kind: "ok", title: "PoC ログをクリア", body: "localStorage から削除しました" });
+  };
+
+  return (
+    <Panel className="p-4 mt-3">
+      <div className="text-[10px] tracking-[0.3em] text-[var(--color-text-muted)] font-mono uppercase mb-3">PoC Debug</div>
+      <div className="grid grid-cols-3 gap-3 font-mono text-[12px]">
+        <div>
+          <div className="text-[10px] text-[var(--color-text-dim)] uppercase tracking-wider">件数</div>
+          <div className="text-[18px] text-[var(--color-text-bright)] mt-1">{snapshot.count}</div>
+        </div>
+        <div>
+          <div className="text-[10px] text-[var(--color-text-dim)] uppercase tracking-wider">Activity</div>
+          <div className="text-[12px] text-[var(--color-text-bright)] mt-1.5 truncate">{snapshot.lastActivity || "—"}</div>
+        </div>
+        <div>
+          <div className="text-[10px] text-[var(--color-text-dim)] uppercase tracking-wider">Last</div>
+          <div className="text-[10px] text-[var(--color-text-bright)] mt-1.5 truncate">{lastTsLabel}</div>
+        </div>
+      </div>
+      <div className="flex gap-2 mt-4">
+        <button className="ev-cta-secondary flex-1" onClick={onExport} type="button">JSON 出力</button>
+        <button className="ev-cta-secondary flex-1" onClick={onClear} type="button" disabled={snapshot.count === 0}>クリア</button>
+      </div>
+    </Panel>
   );
 }
 

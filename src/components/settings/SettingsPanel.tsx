@@ -1,4 +1,4 @@
-import { useState, useRef } from "react";
+import { useEffect, useState, useRef } from "react";
 import {
   Car,
   MapPin,
@@ -32,6 +32,7 @@ import {
   APP_VERSION,
 } from "../../constants/defaults.ts";
 import { exportJson, importJson } from "../../utils/json-io.ts";
+import { exportPocSamples, clearPocSamples } from "../../hooks/useBackgroundGeolocation.ts";
 import { pingGas } from "../../../shared/utils/gas-sync.ts";
 import type { ChargingLocation, Theme } from "../../types/index.ts";
 import type { Translations } from "../../i18n/index.ts";
@@ -602,9 +603,124 @@ export function SettingsPanel({ t }: SettingsPanelProps) {
         </section>
       )}
 
+      <BgPocDebugSection showToast={showToast} />
+
       <div className="text-center font-display text-[10px] text-text-mid tracking-[0.3em] pt-2 opacity-60">
         EV CHARGE LOG v{APP_VERSION}
       </div>
     </div>
+  );
+}
+
+// PoC 期間 (5/6 評価まで) 中だけ表示する移動ログ debug セクション。
+// localStorage を 2 秒ごとに poll → 件数 / 最終 ts / activity を表示。
+// JSON download + クリアで端末から PC に持ち出して分析できる。
+function BgPocDebugSection({
+  showToast,
+}: {
+  showToast: (msg: string, type?: "info" | "success" | "error") => void;
+}) {
+  const [snapshot, setSnapshot] = useState<{
+    count: number;
+    lastTs: string | null;
+    lastActivity: string | null;
+  }>({ count: 0, lastTs: null, lastActivity: null });
+
+  useEffect(() => {
+    const refresh = () => {
+      const arr = exportPocSamples();
+      const last = arr[arr.length - 1];
+      setSnapshot({
+        count: arr.length,
+        lastTs: last?.ts ?? null,
+        lastActivity: last?.activity ?? null,
+      });
+    };
+    refresh();
+    const id = setInterval(refresh, 2000);
+    return () => clearInterval(id);
+  }, []);
+
+  const lastTsLabel = snapshot.lastTs
+    ? new Date(snapshot.lastTs).toLocaleString("ja-JP", { hour12: false })
+    : "—";
+
+  const onExport = () => {
+    const samples = exportPocSamples();
+    if (samples.length === 0) {
+      showToast("BG ログは 0 件です", "info");
+      return;
+    }
+    try {
+      const blob = new Blob([JSON.stringify(samples, null, 2)], {
+        type: "application/json",
+      });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      const stamp = new Date().toISOString().replace(/[:.]/g, "-");
+      a.href = url;
+      a.download = `bg-poc-${stamp}.json`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
+      showToast(`PoC ログ ${samples.length} 件を JSON で保存`, "success");
+    } catch (e: any) {
+      showToast(`PoC 出力失敗: ${String(e?.message || e)}`, "error");
+    }
+  };
+
+  const onClear = () => {
+    if (snapshot.count === 0) return;
+    if (
+      !confirm(
+        `PoC ログ ${snapshot.count} 件を削除しますか? (元に戻せません)`,
+      )
+    )
+      return;
+    clearPocSamples();
+    setSnapshot({ count: 0, lastTs: null, lastActivity: null });
+    showToast("PoC ログをクリア", "success");
+  };
+
+  return (
+    <section className="glass-panel p-3 rounded-xl border-border-subtle">
+      <div className="text-[10px] text-text-mid tracking-[0.3em] uppercase font-display">
+        BG GPS PoC Debug
+      </div>
+      <div className="grid grid-cols-3 gap-3 mt-2 font-mono text-[12px]">
+        <div>
+          <div className="text-[10px] text-text-dim uppercase tracking-wider">件数</div>
+          <div className="text-[18px] text-text-bright mt-1">{snapshot.count}</div>
+        </div>
+        <div>
+          <div className="text-[10px] text-text-dim uppercase tracking-wider">Activity</div>
+          <div className="text-[12px] text-text-bright mt-1.5 truncate">
+            {snapshot.lastActivity || "—"}
+          </div>
+        </div>
+        <div>
+          <div className="text-[10px] text-text-dim uppercase tracking-wider">Last</div>
+          <div className="text-[10px] text-text-bright mt-1.5 truncate">{lastTsLabel}</div>
+        </div>
+      </div>
+      <div className="flex gap-2 mt-3">
+        <button
+          className="flex-1 px-3 py-2 rounded-lg bg-nexus-cyan/10 border border-nexus-cyan/30 text-nexus-cyan text-[12px] font-medium hover:bg-nexus-cyan/20 transition"
+          onClick={onExport}
+          type="button"
+        >
+          JSON 出力
+        </button>
+        <button
+          className="flex-1 px-3 py-2 rounded-lg bg-nexus-error/10 border border-nexus-error/30 text-nexus-error text-[12px] font-medium hover:bg-nexus-error/20 transition disabled:opacity-30 disabled:cursor-not-allowed"
+          onClick={onClear}
+          type="button"
+          disabled={snapshot.count === 0}
+        >
+          クリア
+        </button>
+      </div>
+    </section>
   );
 }

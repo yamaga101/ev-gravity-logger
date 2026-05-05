@@ -62,7 +62,7 @@ function getInitialScreen(): string {
 
 export default function RedesignApp() {
   // ⚡ PoC 死守: BG GPS hook を root で呼ぶ。これがないと 5/6 評価データが切れる
-  useBackgroundGeolocation();
+  const bgStats = useBackgroundGeolocation();
 
   const [active, setActive] = useState<string>(getInitialScreen);
   const activeSession = useChargingStore((s) => s.activeSession);
@@ -92,6 +92,34 @@ export default function RedesignApp() {
   return (
     <NavContext.Provider value={navigate}>
       <Screen />
+      <BgPocBadge stats={bgStats} />
     </NavContext.Provider>
+  );
+}
+
+// PoC 評価期間 (5/6) 中だけ右上に常駐する小さな BG 状態 chip。
+// stats.ready=false (web / 未起動) なら描画しない → 本番 UI を汚さない
+function BgPocBadge({ stats }: { stats: ReturnType<typeof useBackgroundGeolocation> }) {
+  if (!stats.ready) return null;
+  const color = stats.isMoving ? "#00F0FF" : "#6B7A8E";
+  const label = stats.lastActivity ? `${stats.sampleCount}/${stats.lastActivity}` : `${stats.sampleCount}`;
+  return (
+    <div
+      style={{
+        position: "fixed",
+        top: 6,
+        right: 8,
+        zIndex: 60,
+        fontFamily: "var(--font-mono, monospace)",
+        fontSize: 9,
+        letterSpacing: "0.18em",
+        color,
+        textTransform: "uppercase",
+        pointerEvents: "none",
+        textShadow: "0 0 4px rgba(0,0,0,0.6)",
+      }}
+    >
+      BG:{label}
+    </div>
   );
 }
