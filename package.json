@@ -19,7 +19,9 @@
     "cap:livereload": "npx cap run android --livereload --external --port 5173",
     "cap:logcat": "adb logcat -v time *:S Capacitor:V chromium:V evmanager:V CapacitorPlugin:V CapacitorWebView:V TSLocationManager:V",
     "cap:logcat:errors": "adb logcat -v time *:E -d | tail -100",
-    "adb:wireless": "echo '次の 2 step を志柿端末で実行してください:'  && echo '1) S25 Ultra を Mac と USB 接続してこのコマンド: adb tcpip 5555' && echo '2) 設定 → 開発者向けオプション → ワイヤレスデバッグ ON で IP 確認 (例 192.168.x.y:5555) → adb connect 192.168.x.y:5555'"
+    "adb:wireless": "echo '次の 2 step を志柿端末で実行してください:'  && echo '1) S25 Ultra を Mac と USB 接続してこのコマンド: adb tcpip 5555' && echo '2) 設定 → 開発者向けオプション → ワイヤレスデバッグ ON で IP 確認 (例 192.168.x.y:5555) → adb connect 192.168.x.y:5555'",
+    "upload-apk": "python3 scripts/upload-apk-to-drive.py",
+    "ship-apk": "npm run cap:sync && npm run upload-apk"
   },
   "dependencies": {
     "@capacitor/android": "^7.0.0",
