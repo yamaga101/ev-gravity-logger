@@ -107,7 +107,7 @@ function BgPocBadge({ stats }: { stats: ReturnType<typeof useBackgroundGeolocati
     <div
       style={{
         position: "fixed",
-        top: 6,
+        top: "calc(env(safe-area-inset-top, 0px) + 6px)",
         right: 8,
         zIndex: 60,
         fontFamily: "var(--font-mono, monospace)",
