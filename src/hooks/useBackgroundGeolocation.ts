@@ -12,7 +12,13 @@
 // 結果 (location) は localStorage に蓄積。本格実装は P2 で SQLite + GAS sync に切替。
 
 import { useEffect, useState } from "react";
-import { Capacitor } from "@capacitor/core";
+import { Capacitor, registerPlugin } from "@capacitor/core";
+import type { BackgroundGeolocationPlugin } from "@capacitor-community/background-geolocation";
+
+// community plugin は types-only で main JS を export しない。
+// 使う側で registerPlugin して native bridge を取り出す。
+const BackgroundGeolocation =
+  registerPlugin<BackgroundGeolocationPlugin>("BackgroundGeolocation");
 
 export interface PocLocationSample {
   ts: string;
@@ -74,12 +80,7 @@ export function useBackgroundGeolocation() {
       }
 
       try {
-        const mod = await import(
-          /* @vite-ignore */ "@capacitor-community/background-geolocation"
-        );
-        const BG = mod.BackgroundGeolocation ?? (mod as any).default ?? mod;
-
-        watcherId = await BG.addWatcher(
+        watcherId = await BackgroundGeolocation.addWatcher(
           {
             backgroundMessage: "EV Manager — BG GPS で位置を記録中",
             backgroundTitle: "EV Manager",
@@ -144,15 +145,9 @@ export function useBackgroundGeolocation() {
     return () => {
       cancelled = true;
       if (watcherId) {
-        // dynamic import 経由で plugin を取り出して removeWatcher
-        import(
-          /* @vite-ignore */ "@capacitor-community/background-geolocation"
-        ).then((mod) => {
-          const BG = (mod as any).BackgroundGeolocation ?? (mod as any).default ?? mod;
-          BG.removeWatcher({ id: watcherId }).catch((e: any) =>
-            console.warn("[BG-POC] removeWatcher failed", e),
-          );
-        });
+        BackgroundGeolocation.removeWatcher({ id: watcherId }).catch((e: any) =>
+          console.warn("[BG-POC] removeWatcher failed", e),
+        );
       }
     };
   }, []);
