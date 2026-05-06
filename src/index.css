@@ -792,9 +792,10 @@ html, body, #root { background: #06080F; }
 .ev-screen__body {
   flex: 1;
   /* Android Capacitor WebView は env(safe-area-inset-top) が 0 を返すので
-     28px の hardcoded fallback を max() で噛ませる。iOS / 対応 WebView は
-     env() の実値が使われる。32dp 以上の punch-hole 端末でも実害なし。 */
-  padding: calc(12px + max(env(safe-area-inset-top, 0px), 28px)) 16px 96px;
+     44px の hardcoded fallback を max() で噛ませる。S25 Ultra の punch-hole
+     status bar (~36-44dp) を carve out するのに必要。標準 24dp 端末でも
+     視覚的余白が増えるだけで実害なし。iOS / 対応 WebView は env() の実値。 */
+  padding: calc(12px + max(env(safe-area-inset-top, 0px), 44px)) 16px 96px;
   overflow: hidden;
   position: relative;
   z-index: 2;

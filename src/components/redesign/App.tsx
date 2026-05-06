@@ -99,26 +99,25 @@ export default function RedesignApp() {
   );
 }
 
-// standards.md §4 — 全 PJ 共通 version 表示。launcher 起動から 0 タップで読める右上常駐。
+// standards.md §4 — 全 PJ 共通 version 表示。BottomNav の真上に小さく常駐。
 // SoT: shared/constants/defaults.ts APP_VERSION + vite define __GIT_SHA__ (build 起源判別用)
+// 上部 BG badge と分離 (役割が違う: BG=実時 telemetry, version=build 起源)
 function VersionTag() {
   return (
     <div
       style={{
         position: "fixed",
-        top: "calc(max(env(safe-area-inset-top, 0px), 28px) + 24px)",
-        right: 8,
-        zIndex: 60,
+        bottom: "calc(env(safe-area-inset-bottom, 0px) + 76px)",
+        right: 12,
+        zIndex: 50,
         fontFamily: "var(--font-mono, monospace)",
         fontSize: 9,
-        letterSpacing: "0.16em",
-        color: "rgba(140, 158, 200, 0.55)",
-        textTransform: "uppercase",
+        letterSpacing: "0.12em",
+        color: "rgba(120, 200, 230, 0.32)",
         pointerEvents: "none",
-        textShadow: "0 0 4px rgba(0,0,0,0.6)",
       }}
     >
-      v{APP_VERSION} {__GIT_SHA__}
+      v{APP_VERSION} · {__GIT_SHA__}
     </div>
   );
 }
@@ -133,7 +132,7 @@ function BgPocBadge({ stats }: { stats: ReturnType<typeof useBackgroundGeolocati
     <div
       style={{
         position: "fixed",
-        top: "calc(max(env(safe-area-inset-top, 0px), 28px) + 6px)",
+        top: "calc(max(env(safe-area-inset-top, 0px), 44px) + 6px)",
         right: 8,
         zIndex: 60,
         fontFamily: "var(--font-mono, monospace)",
