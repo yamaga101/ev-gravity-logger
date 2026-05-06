@@ -4,7 +4,11 @@
 // MicroChart, BottomNav, AppShell, S25Frame.
 
 import React from "react";
-const { useState, useMemo, useEffect, useRef } = React;
+const { useState, useMemo, useEffect, useRef, useContext } = React;
+
+// NavContext — SilentApp が provide、BottomNav / GhostButton 等が consume。
+// 値は (key: string) => void で navigate(navKey) を呼ぶ
+const NavContext = React.createContext(null);
 
 // ─────────────────────────────────────────────────────────────
 // S25Frame — minimal Android frame, pure black, edge-to-edge
@@ -314,12 +318,14 @@ function MicroChart({ data = [], width = 280, height = 60, color = '#F4F2EE', ac
 // BottomNav — 5 tab, glass blur, 1px top border, amber active line.
 // ─────────────────────────────────────────────────────────────
 function BottomNav({ active = 'today' }) {
+  const navigate = useContext(NavContext);
   const tabs = [
     { id: 'today',    label: 'Today',    icon: NavIcons.today    },
     { id: 'charge',   label: 'Charge',   icon: NavIcons.charge   },
     { id: 'history',  label: 'History',  icon: NavIcons.history  },
     { id: 'stats',    label: 'Stats',    icon: NavIcons.stats    },
     { id: 'vehicle',  label: 'Vehicle',  icon: NavIcons.vehicle  },
+    { id: 'settings', label: 'Settings', icon: NavIcons.settings },
   ];
   return (
     <div style={{
@@ -337,11 +343,13 @@ function BottomNav({ active = 'today' }) {
         const c = isActive ? '#E8A04A' : '#5C5752';
         const Icon = t.icon;
         return (
-          <div key={t.id} style={{
-            flex: 1, position: 'relative',
-            display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
-            gap: 4, cursor: 'pointer',
-          }}>
+          <div key={t.id}
+            onClick={() => navigate && navigate(t.id)}
+            style={{
+              flex: 1, position: 'relative',
+              display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+              gap: 4, cursor: 'pointer',
+            }}>
             {isActive && (
               <div style={{
                 position: 'absolute', top: 0, left: '50%', transform: 'translateX(-50%)',
@@ -395,6 +403,12 @@ const NavIcons = {
       <circle cx="16" cy="16" r="1.4" fill={color}/>
     </svg>
   ),
+  settings: ({ size = 22, color = '#5C5752' }) => (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+      <circle cx="12" cy="12" r="3"/>
+      <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09a1.65 1.65 0 0 0-1-1.51 1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09a1.65 1.65 0 0 0 1.51-1 1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+    </svg>
+  ),
 };
 
 // ─────────────────────────────────────────────────────────────
@@ -434,6 +448,7 @@ function Row({ label, value, sub, onClick, style = {}, last = false, accent = fa
 }
 
 export {
+  NavContext,
   S25Frame, AppShell,
   HeroNumber, StatusLabel, AccentChip,
   GhostButton, PrimaryButton, Card, MicroChart, BottomNav, Divider, Row,

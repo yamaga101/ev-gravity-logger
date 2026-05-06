@@ -9,6 +9,7 @@ import React, { useState, useMemo, useEffect } from "react";
 import { useBackgroundGeolocation } from "../../hooks/useBackgroundGeolocation";
 import { useChargingStore } from "../../store/useChargingStore";
 import { APP_VERSION } from "../../constants/defaults";
+import { NavContext } from "./primitives";
 import {
   TodayScreen,
   ChargeStartScreen,
@@ -93,10 +94,12 @@ export default function SilentApp() {
   const Screen = SCREENS[active] || TodayScreen;
 
   return (
-    <div className="silent-app" style={{ minHeight: "100vh", background: "#000", color: "#F4F2EE" }}>
-      <Screen />
-      <BgStatusChip stats={bgStats} />
-    </div>
+    <NavContext.Provider value={navigate}>
+      <div className="silent-app" style={{ minHeight: "100vh", background: "#000", color: "#F4F2EE" }}>
+        <Screen />
+        <BgStatusChip stats={bgStats} />
+      </div>
+    </NavContext.Provider>
   );
 }
 

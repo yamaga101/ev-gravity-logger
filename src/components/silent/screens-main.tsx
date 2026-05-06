@@ -4,6 +4,7 @@
 import React from "react";
 const { useState, useMemo, useEffect } = React;
 import {
+  NavContext,
   S25Frame, AppShell, HeroNumber, StatusLabel, AccentChip,
   GhostButton, PrimaryButton, Card, MicroChart, BottomNav, Divider, Row, NavIcons,
 } from "./primitives";
@@ -12,6 +13,7 @@ import {
 // 1. TODAY — hero. 1-second judgement.
 // ─────────────────────────────────────────────────────────────
 function TodayScreen() {
+  const navigate = React.useContext(NavContext);
   return (
     <AppShell nav navActive="today">
       <div style={{ padding: '24px 24px 24px', display: 'flex', flexDirection: 'column', height: '100%' }}>
@@ -85,9 +87,9 @@ function TodayScreen() {
 
         {/* Ghost actions — minimal trio */}
         <div style={{ display: 'flex', gap: 8 }}>
-          <GhostButton style={{ flex: 1 }}>充電</GhostButton>
-          <GhostButton style={{ flex: 1 }}>履歴</GhostButton>
-          <GhostButton style={{ flex: 1 }}>車両</GhostButton>
+          <GhostButton style={{ flex: 1 }} onClick={() => navigate && navigate('charge')}>充電</GhostButton>
+          <GhostButton style={{ flex: 1 }} onClick={() => navigate && navigate('history')}>履歴</GhostButton>
+          <GhostButton style={{ flex: 1 }} onClick={() => navigate && navigate('vehicle')}>車両</GhostButton>
         </div>
       </div>
     </AppShell>
@@ -98,6 +100,7 @@ function TodayScreen() {
 // 2a. CHARGE START — station + start SOC + target + price
 // ─────────────────────────────────────────────────────────────
 function ChargeStartScreen() {
+  const navigate = React.useContext(NavContext);
   return (
     <AppShell nav navActive="charge">
       <div style={{ padding: '24px 24px 24px', display: 'flex', flexDirection: 'column', height: '100%' }}>
@@ -164,7 +167,7 @@ function ChargeStartScreen() {
 
         <div style={{ flex: 1 }} />
 
-        <PrimaryButton>Start Charge</PrimaryButton>
+        <PrimaryButton onClick={() => navigate && navigate('charge-live')}>Start Charge</PrimaryButton>
       </div>
     </AppShell>
   );
@@ -174,6 +177,7 @@ function ChargeStartScreen() {
 // 2b. CHARGE LIVE — running session
 // ─────────────────────────────────────────────────────────────
 function ChargeLiveScreen() {
+  const navigate = React.useContext(NavContext);
   return (
     <AppShell nav navActive="charge">
       <div style={{ padding: '24px 24px 24px', display: 'flex', flexDirection: 'column', height: '100%' }}>
@@ -237,7 +241,7 @@ function ChargeLiveScreen() {
 
         <div style={{ flex: 1 }} />
 
-        <GhostButton style={{ height: 48, width: '100%' }}>Stop Charge</GhostButton>
+        <GhostButton style={{ height: 48, width: '100%' }} onClick={() => navigate && navigate('charge-done')}>Stop Charge</GhostButton>
       </div>
     </AppShell>
   );
@@ -247,6 +251,7 @@ function ChargeLiveScreen() {
 // 2c. CHARGE DONE — completion summary
 // ─────────────────────────────────────────────────────────────
 function ChargeDoneScreen() {
+  const navigate = React.useContext(NavContext);
   return (
     <AppShell nav navActive="charge">
       <div style={{ padding: '24px 24px 24px', display: 'flex', flexDirection: 'column', height: '100%' }}>
@@ -291,8 +296,8 @@ function ChargeDoneScreen() {
         <div style={{ flex: 1 }} />
 
         <div style={{ display: 'flex', gap: 8 }}>
-          <GhostButton style={{ flex: 1 }}>履歴で見る</GhostButton>
-          <PrimaryButton style={{ flex: 1 }}>Done</PrimaryButton>
+          <GhostButton style={{ flex: 1 }} onClick={() => navigate && navigate('history')}>履歴で見る</GhostButton>
+          <PrimaryButton style={{ flex: 1 }} onClick={() => navigate && navigate('today')}>Done</PrimaryButton>
         </div>
       </div>
     </AppShell>
