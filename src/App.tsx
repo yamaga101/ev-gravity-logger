@@ -1,4 +1,6 @@
 import { useState, useEffect, lazy, Suspense, useRef } from "react";
+
+const RedesignApp = lazy(() => import("./components/redesign/App.tsx"));
 import { ExternalLink, HelpCircle } from "lucide-react";
 import { HelpPanel } from "./components/help/HelpPanel.tsx";
 import { BottomNav } from "./components/ui/BottomNav.tsx";
@@ -27,6 +29,33 @@ const SettingsPanel = lazy(() => import("./components/settings/SettingsPanel.tsx
 const VehicleTab = lazy(() => import("./components/vehicle/VehicleTab.tsx").then((m) => ({ default: m.VehicleTab })));
 
 export default function App() {
+  // NEXUS v2 が default。?ui=v1 で旧 UI (fallback / 緊急時の脱出口)
+  const isV1Fallback =
+    typeof window !== "undefined" &&
+    new URLSearchParams(window.location.search).get("ui") === "v1";
+
+  if (!isV1Fallback) {
+    return (
+      <Suspense
+        fallback={
+          <div
+            style={{
+              padding: 40,
+              textAlign: "center",
+              color: "#EAF2FF",
+              background: "#04060D",
+              minHeight: "100vh",
+            }}
+          >
+            Loading NEXUS v2…
+          </div>
+        }
+      >
+        <RedesignApp />
+      </Suspense>
+    );
+  }
+
   const [activeTab, setActiveTab] = useState<TabId>("charging");
   const [completionRecord, setCompletionRecord] =
     useState<ChargingRecord | null>(null);
