@@ -5,9 +5,17 @@
 # Drive だと debug 署名は毎回 malware 自動 flag に引っかかるため、配布は
 # GitHub Releases に統一。yamaga101 carve-out 配下、Google OAuth 不要。
 #
+# 配布 URL は /releases/latest/download/app-debug.apk が canonical。
+# release ごとに変わらない安定 URL なのでメール本文 / QR 等にこれを貼れば
+# 次回以降 v4.9.2, v4.10.0 ... と上がっても自動で最新を返す。
+#
+# 注意: 旧 Drive の APK 資産はこの script では削除しない。flagged 状態で
+# Drive 上に残るので、不要なら手動で Trash に移動すること。新 release を
+# 作っても Drive 側は触らない (もう Drive を配布チャネルとして使わない)。
+#
 # Usage:
-#   bash scripts/release-apk.sh         # tag = v<package.json.version>, prerelease
-#   bash scripts/release-apk.sh --no-prerelease
+#   bash scripts/release-apk.sh         # tag = v<package.json.version>
+#   bash scripts/release-apk.sh --prerelease   # 公開しない / latest にしない
 #
 # Requirements:
 #   - gh CLI が yamaga101 で認証済 (gh auth status で確認)
@@ -18,11 +26,14 @@ set -euo pipefail
 
 REPO="yamaga101/ev-manager"
 APK="android/app/build/outputs/apk/debug/app-debug.apk"
-PRERELEASE_FLAG="--prerelease"
+# default は production-like に出して /latest/download/ で取れるようにする。
+# debug 署名 APK を確定 release と扱うのは違和感あるが、PoC 期間中の利便性優先。
+# 完全に隠しておきたい時だけ --prerelease を付ける。
+PRERELEASE_FLAG="--latest"
 
 for arg in "$@"; do
   case "$arg" in
-    --no-prerelease) PRERELEASE_FLAG="" ;;
+    --prerelease) PRERELEASE_FLAG="--prerelease" ;;
     --apk=*) APK="${arg#--apk=}" ;;
     *) echo "[error] unknown arg: $arg" >&2; exit 1 ;;
   esac
@@ -71,13 +82,17 @@ URL=$(gh release view "$TAG" --json url -R "$REPO" -q .url)
 # gh の `apk#name` syntax は label を変えるが name はそのまま (`app-debug.apk`)。
 # ダウンロード URL は name ベースなので最初の asset の url を取る。
 ASSET_URL=$(gh release view "$TAG" --json assets -R "$REPO" -q ".assets[0].url")
+# /releases/latest/download/<name> は最新 release を指す stable URL (302 redirect)。
+# release ごとに変わらないので、メール本文や QR には基本これを貼る。
+LATEST_URL="https://github.com/${REPO}/releases/latest/download/app-debug.apk"
 
 echo ""
 echo "[ok]   release page : ${URL}"
 echo "[ok]   asset url    : ${ASSET_URL}"
+echo "[ok]   latest url   : ${LATEST_URL}   (← 安定: 次回 release でも同じ)"
 
-# macOS Mac なら release page URL をクリップボードへ
+# macOS なら latest URL をクリップボードへ (release ごとに同じ短い URL)
 if command -v pbcopy >/dev/null 2>&1; then
-  printf '%s' "$URL" | pbcopy
-  echo "[ok]   pbcopy       : release page URL をクリップボードに copy 済"
+  printf '%s' "$LATEST_URL" | pbcopy
+  echo "[ok]   pbcopy       : latest URL をクリップボードに copy 済"
 fi

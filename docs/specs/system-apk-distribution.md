@@ -33,13 +33,31 @@ npm run release-apk
       ├─ package.json から version 抽出 (vX.Y.Z)
       ├─ APK 存在確認 (android/app/build/outputs/apk/debug/app-debug.apk)
       ├─ 既存 release があれば asset 上書き、無ければ新規作成
-      │     gh release create v<X.Y.Z> <apk> --prerelease --title ... --notes ...
-      ├─ release page URL と asset URL を取得
-      └─ macOS なら pbcopy で release URL をクリップボードへ
+      │     gh release create v<X.Y.Z> <apk> --latest --title ... --notes ...
+      ├─ release page URL / asset URL / latest stable URL を出力
+      └─ macOS なら pbcopy で latest URL をクリップボードへ
 ```
 
 `ship-apk` (`npm run cap:sync && npm run release-apk`) で **build → sync → release**
 を 1 発。
+
+### 配布 URL は `/releases/latest/download/` を canonical に
+
+毎 release ごとに URL を貼り替える運用は腐る。GitHub の built-in:
+
+```
+https://github.com/yamaga101/ev-manager/releases/latest/download/app-debug.apk
+```
+
+これは 302 redirect で **最新 (latest 指定された) release の asset** に飛ぶ。
+v4.9.1 → v4.9.2 → v4.10.0 と上がっても URL 自体は同じ。メール本文 / QR コード /
+spec / README にはこの URL を貼る運用に統一。
+
+そのため script は `--latest` (= prerelease=false かつ latest フラグ) で release を
+作る。debug 署名でも PoC 期間中は配布コスト最小化のため latest 扱いにする。
+
+「まだ表に出したくない」build を作るときだけ `--prerelease` を付ける。
+prerelease は `/latest/download/` から除外される。
 
 ## 壊れたらどうする？
 
@@ -72,8 +90,7 @@ CI 影響なし。配布が手動 (gh CLI 直叩き or GitHub web UI でアセ�
 | リソース | 状態 | 後始末 |
 |---|---|---|
 | GCP project `gen-lang-client-0371763712` | OAuth consent screen + 「EV Manager CLI」OAuth Client 作成済 | 残置 (Gemini API Key と共存。将来再利用の可能性) |
-| Drive folder「EV Manager builds」 | 1 ファイル (`ev-manager-v4.9.1-debug.apk`、Drive ToS で flagged 状態) | 手動 Trash 推奨 |
-| Drive flagged file | 共有不可だが所有者は見える状態 | Trash → 30 日後 自動削除 |
+| Drive folder「EV Manager builds」 | 2026-05-06 時点で flagged な v4.9.1 APK 1 ファイル | この session で Trash 済 → 30 日後自動完全削除 |
 | `~/.config/ev-manager/credentials.json` | PKCE-only Desktop OAuth client | 未使用、削除可 |
 
 ### release notes について
@@ -84,8 +101,19 @@ CI 影響なし。配布が手動 (gh CLI 直叩き or GitHub web UI でアセ�
 
 ### prerelease フラグ
 
-debug 署名 APK は production 配布に不適のため、デフォルト `--prerelease`。
-release 署名で出すときは `--no-prerelease` で外す。
+PoC 期間中はデフォルト `--latest` (= 公開 / latest 扱い) にして
+`/releases/latest/download/` を機能させる。隠したい debug build のみ
+`bash scripts/release-apk.sh --prerelease` で prerelease 化する。
+
+prerelease 化された release は `/latest/download/` から除外され、別途
+`/releases/download/v<X.Y.Z>/app-debug.apk` の version 固定 URL を案内する必要がある。
+
+### Drive 旧資産の cleanup について
+
+この script は **Drive 上の旧 APK を削除しない**。Drive を配布チャネルとして
+使うのを廃止したため、新 release を作っても Drive 側は touch しない設計。
+旧 APK (例: `EV Manager builds/ev-manager-v4.9.1-debug.apk` が flagged 状態で
+残っているもの) は Drive web UI で手動 Trash すること。
 
 ### gh CLI と Token
 
