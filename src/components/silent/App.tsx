@@ -97,36 +97,7 @@ export default function SilentApp() {
     <NavContext.Provider value={navigate}>
       <div className="silent-app" style={{ minHeight: "100vh", background: "#000", color: "#F4F2EE" }}>
         <Screen />
-        <BgStatusChip stats={bgStats} />
       </div>
     </NavContext.Provider>
-  );
-}
-
-// 上部 status chip — Today 画面 上部に micro 表示。BG state 確認用。
-// brief 通り cyan ではなく amber くすみで、不可視に近い density。
-function BgStatusChip({ stats }: { stats: ReturnType<typeof useBackgroundGeolocation> }) {
-  if (!stats.ready) return null;
-  const tone = stats.isMoving ? "rgba(232, 160, 74, 0.55)" : "rgba(168, 163, 155, 0.32)";
-  const label = stats.lastActivity
-    ? `${stats.sampleCount}/${stats.lastActivity}`
-    : `${stats.sampleCount}`;
-  return (
-    <div
-      style={{
-        position: "fixed",
-        top: "calc(max(env(safe-area-inset-top, 0px), var(--android-inset-top, 28px)) + 4px)",
-        right: 12,
-        zIndex: 60,
-        fontFamily: "'Inter', sans-serif",
-        fontSize: 10,
-        letterSpacing: "0.12em",
-        color: tone,
-        textTransform: "uppercase",
-        pointerEvents: "none",
-      }}
-    >
-      bg · {label}
-    </div>
   );
 }

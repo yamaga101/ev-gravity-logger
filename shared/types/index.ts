@@ -24,6 +24,10 @@ export interface ChargingSession {
   kw: number | string;
   startRangeAcOn?: number;
   startSegmentCount?: number;
+  /** GPS coordinates captured at session start (Silent Console v5.x) */
+  startLat?: number;
+  startLng?: number;
+  startAccuracyM?: number;
 }
 
 export interface ChargingRecord extends ChargingSession {
@@ -37,6 +41,10 @@ export interface ChargingRecord extends ChargingSession {
   chargeSpeed: number;
   /** Battery State of Health percentage (optional, user-entered) */
   soh?: number;
+  /** GPS coordinates captured at session end (Silent Console v5.x) */
+  endLat?: number;
+  endLng?: number;
+  endAccuracyM?: number;
   // Legacy field names for migration compatibility
   timestamp?: string;
   battery?: number;

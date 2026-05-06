@@ -56,6 +56,10 @@ export interface BgPocStats {
   lastActivity: string | null;
   isMoving: boolean;
   error: string | null;
+  lastLat: number | null;
+  lastLng: number | null;
+  lastSpeedMps: number | null;
+  lastAccuracyM: number | null;
 }
 
 export function useBackgroundGeolocation() {
@@ -67,6 +71,10 @@ export function useBackgroundGeolocation() {
     lastActivity: null,
     isMoving: false,
     error: null,
+    lastLat: null,
+    lastLng: null,
+    lastSpeedMps: null,
+    lastAccuracyM: null,
   });
 
   useEffect(() => {
@@ -127,6 +135,10 @@ export function useBackgroundGeolocation() {
                 lastTs: sample.ts,
                 lastActivity: activity,
                 isMoving,
+                lastLat: location.latitude,
+                lastLng: location.longitude,
+                lastSpeedMps: speedMps,
+                lastAccuracyM: location.accuracy ?? null,
               }));
             }
           },

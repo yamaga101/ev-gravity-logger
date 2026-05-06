@@ -4,9 +4,11 @@
 import React from "react";
 const { useState, useMemo, useEffect } = React;
 import {
+  NavContext,
   S25Frame, AppShell, HeroNumber, StatusLabel, AccentChip,
   GhostButton, PrimaryButton, Card, MicroChart, BottomNav, Divider, Row, NavIcons,
 } from "./primitives";
+import { APP_VERSION } from "../../constants/defaults";
 
 // ─────────────────────────────────────────────────────────────
 // 4. STATS —疎密対比. Hero clusters + sparklines.
@@ -176,7 +178,7 @@ function SettingsScreen() {
   );
 
   return (
-    <AppShell nav navActive="vehicle">
+    <AppShell nav navActive="settings">
       <div style={{ padding: '24px 24px 0' }}>
         <StatusLabel>Settings</StatusLabel>
       </div>
@@ -203,10 +205,10 @@ function SettingsScreen() {
       <Item label="プライバシー" />
       <Item label="ライセンス" last />
 
-      {/* Version stamp at the bottom */}
+      {/* Version stamp at the bottom — dynamic */}
       <div style={{ padding: '40px 24px 32px', textAlign: 'center' }}>
         <div className="num" style={{ fontSize: 11, color: '#3A3633', letterSpacing: '0.20em' }}>
-          EV MANAGER · v 5.0.0
+          EV MANAGER · v{APP_VERSION}
         </div>
         <div style={{ fontSize: 10, color: '#3A3633', letterSpacing: '0.20em', marginTop: 6 }}>
           YAMAGA101 · CARVE-OUT
