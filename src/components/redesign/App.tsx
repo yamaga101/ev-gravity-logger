@@ -5,6 +5,7 @@
 import React, { useState, useEffect, useMemo } from "react";
 import { useBackgroundGeolocation } from "../../hooks/useBackgroundGeolocation";
 import { useChargingStore } from "../../store/useChargingStore";
+import { APP_VERSION } from "../../constants/defaults.ts";
 import { NavContext } from "./primitives";
 import {
   ChargingStartScreen,
@@ -93,7 +94,32 @@ export default function RedesignApp() {
     <NavContext.Provider value={navigate}>
       <Screen />
       <BgPocBadge stats={bgStats} />
+      <VersionTag />
     </NavContext.Provider>
+  );
+}
+
+// standards.md §4 — 全 PJ 共通 version 表示。launcher 起動から 0 タップで読める右上常駐。
+// SoT: shared/constants/defaults.ts APP_VERSION + vite define __GIT_SHA__ (build 起源判別用)
+function VersionTag() {
+  return (
+    <div
+      style={{
+        position: "fixed",
+        top: "calc(max(env(safe-area-inset-top, 0px), 28px) + 24px)",
+        right: 8,
+        zIndex: 60,
+        fontFamily: "var(--font-mono, monospace)",
+        fontSize: 9,
+        letterSpacing: "0.16em",
+        color: "rgba(140, 158, 200, 0.55)",
+        textTransform: "uppercase",
+        pointerEvents: "none",
+        textShadow: "0 0 4px rgba(0,0,0,0.6)",
+      }}
+    >
+      v{APP_VERSION} {__GIT_SHA__}
+    </div>
   );
 }
 
@@ -107,7 +133,7 @@ function BgPocBadge({ stats }: { stats: ReturnType<typeof useBackgroundGeolocati
     <div
       style={{
         position: "fixed",
-        top: "calc(env(safe-area-inset-top, 0px) + 6px)",
+        top: "calc(max(env(safe-area-inset-top, 0px), 28px) + 6px)",
         right: 8,
         zIndex: 60,
         fontFamily: "var(--font-mono, monospace)",

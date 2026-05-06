@@ -1,5 +1,7 @@
 /// <reference types="vite/client" />
 
+declare const __GIT_SHA__: string;
+
 declare module "virtual:pwa-register/react" {
   import type { Dispatch, SetStateAction } from "react";
 

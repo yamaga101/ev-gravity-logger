@@ -2,9 +2,18 @@ import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
 import tailwindcss from "@tailwindcss/vite";
 import { VitePWA } from "vite-plugin-pwa";
+import { execSync } from "node:child_process";
+
+const gitShortSha: string = (() => {
+  try { return execSync("git rev-parse --short HEAD").toString().trim().slice(0, 7); }
+  catch { return "unknown"; }
+})();
 
 export default defineConfig({
   base: "/ev-manager/",
+  define: {
+    __GIT_SHA__: JSON.stringify(gitShortSha),
+  },
   plugins: [
     react(),
     tailwindcss(),
