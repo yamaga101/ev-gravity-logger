@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="108" height="108" viewBox="0 0 108 108">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="108" y2="108" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#0E1A36"/>
+      <stop offset="1" stop-color="#03061A"/>
+    </linearGradient>
+    <radialGradient id="halo" cx="54" cy="32" r="56" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#22E6FF" stop-opacity="0.18"/>
+      <stop offset="0.6" stop-color="#22E6FF" stop-opacity="0.06"/>
+      <stop offset="1" stop-color="#22E6FF" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="bolt" x1="36" y1="22" x2="72" y2="88" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#7BF5FF"/>
+      <stop offset="0.5" stop-color="#22E6FF"/>
+      <stop offset="1" stop-color="#00B8D4"/>
+    </linearGradient>
+  </defs>
+  <rect width="108" height="108" fill="url(#bg)"/>
+  <rect width="108" height="108" fill="url(#halo)"/>
+  <path d="M62,22 L36,58 L50,58 L46,88 L72,50 L58,50 Z" fill="url(#bolt)"/>
+</svg>
