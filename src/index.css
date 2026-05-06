@@ -680,13 +680,19 @@ option {
   --color-text-on-plasma:     #04140B;
 
   /* ---------- Typography ----------
-     Sora — modern geometric, replaces Orbitron's "movie poster" stiffness
-     while keeping the technical posture. Excellent JP rendering pairing.
-     JetBrains Mono retained for numerals (kWh, %, ¥).
-     Inter as fallback body. Noto Sans JP for Japanese. */
-  --font-display:  "Sora", "Noto Sans JP", system-ui, sans-serif;
-  --font-sans:     "Inter", "Noto Sans JP", system-ui, sans-serif;
-  --font-mono:     "JetBrains Mono", ui-monospace, monospace;
+     Pro Bridge L4 採択 (2026-05-06) を @theme scope に反映。
+     旧 Sora / Inter 指定は Google Fonts に load しておらず Noto Sans JP に
+     fallback してた (= JP font 変更が効かない原因)。
+     Pro Bridge spec:
+     - Latin display: Orbitron (太く HUD 感)
+     - Latin sans: Exo 2 (UI body)
+     - Mono: JetBrains Mono (telemetry / numerals)
+     - JP primary: BIZ UDPGothic (industrial 機能美、計器盤ラベル)
+     - JP fallback: Noto Sans JP (long body / glyph fallback) */
+  --font-display:  "Orbitron", "BIZ UDPGothic", "Noto Sans JP", system-ui, sans-serif;
+  --font-sans:     "Exo 2", "BIZ UDPGothic", "Noto Sans JP", system-ui, sans-serif;
+  --font-mono:     "JetBrains Mono", "BIZ UDPGothic", ui-monospace, monospace;
+  --font-jp:       "BIZ UDPGothic", "Noto Sans JP", system-ui, sans-serif;
 
   /* ---------- Type scale (mobile-first, 412dp base) ---------- */
   --text-micro:     10px;   /* tags, foreground service hint */
