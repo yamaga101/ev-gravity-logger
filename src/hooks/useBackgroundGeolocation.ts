@@ -1,8 +1,15 @@
-// useBackgroundGeolocation — P0-3 PoC: transistorsoft demo で 3日連続 BG 測位生存テスト
-// Council 推奨設定値ベース。Universal 移動ログの素地。
+// useBackgroundGeolocation — community plugin (@capacitor-community/background-geolocation)
 //
-// 結果 (location/motionchange/activitychange) は console + localStorage に蓄積。
-// 本格実装は P2 で SQLite + GAS sync に切替。
+// 2026-05-06 Pro Bridge L4 council 後の path D' 採択で transistorsoft (有償) から
+// 移行。license popup 解消が主目的。activity recognition (IN_VEHICLE 等) は失われ、
+// motion / heartbeat 系 callback も無くなったが、yamaga101 個人 carve-out で
+// S25 Ultra 専用 + battery 最適化手動 OFF なら community で十分という判定。
+//
+// 旧 transistorsoft 版の API surface (stats.ready / enabled / sampleCount /
+// lastTs / lastActivity / isMoving / error) は維持。lastActivity は AR がない
+// ので speed ベースで MOVING / STILL を合成する。
+//
+// 結果 (location) は localStorage に蓄積。本格実装は P2 で SQLite + GAS sync に切替。
 
 import { useEffect, useState } from "react";
 import { Capacitor } from "@capacitor/core";
@@ -18,7 +25,10 @@ export interface PocLocationSample {
 }
 
 const POC_STORAGE_KEY = "ev-poc-bg-locations";
-const POC_MAX_SAMPLES = 5000; // 3 日 ~ 数千件想定
+const POC_MAX_SAMPLES = 5000;
+// speed (m/s) ≥ 1.0 を MOVING (≈ 3.6km/h、徒歩〜)。歩行+運転両方とも MOVING 扱い。
+// transistorsoft の AR ベース IN_VEHICLE / ON_FOOT 細分はもう取れないので、簡素化。
+const MOVING_SPEED_THRESHOLD_MPS = 1.0;
 
 function appendSample(s: PocLocationSample) {
   try {
@@ -55,7 +65,7 @@ export function useBackgroundGeolocation() {
 
   useEffect(() => {
     let cancelled = false;
-    let unsubscribers: Array<() => void> = [];
+    let watcherId: string | null = null;
 
     async function init() {
       if (!Capacitor.isNativePlatform()) {
@@ -64,103 +74,65 @@ export function useBackgroundGeolocation() {
       }
 
       try {
-        // dynamic import で web ビルドが死なないように
         const mod = await import(
-          /* @vite-ignore */ "@transistorsoft/capacitor-background-geolocation"
+          /* @vite-ignore */ "@capacitor-community/background-geolocation"
         );
-        const BG = mod.default ?? mod;
+        const BG = mod.BackgroundGeolocation ?? (mod as any).default ?? mod;
 
-        // 通知再投与 helper: text を毎回変えて plugin に startForeground() を再呼出させる
-        // → ユーザーが swipe dismiss した後でも復活する
-        const reissueNotification = () => {
-          const now = new Date().toLocaleTimeString("ja-JP", { hour12: false });
-          BG.setConfig({
-            notification: {
-              title: "EV Manager — 移動記録 (常駐)",
-              text: `BG 記録中 (last: ${now})`,
-              sticky: true,
-              priority: BG.NOTIFICATION_PRIORITY_HIGH,
-              channelName: "EV Manager BG GPS",
-            },
-          }).catch((e: any) => console.warn("[BG-POC] reissue failed", e));
-        };
-
-        // listeners
-        const locSub = BG.onLocation((loc: any) => {
-          reissueNotification();
-          const sample: PocLocationSample = {
-            ts: new Date(loc.timestamp).toISOString(),
-            lat: loc.coords.latitude,
-            lng: loc.coords.longitude,
-            speed: loc.coords.speed ?? null,
-            accuracy: loc.coords.accuracy,
-            activity: loc.activity?.type ?? null,
-            isMoving: !!loc.is_moving,
-          };
-          appendSample(sample);
-          if (!cancelled) {
-            const arr = JSON.parse(localStorage.getItem(POC_STORAGE_KEY) || "[]");
-            setStats((s) => ({
-              ...s,
-              sampleCount: arr.length,
-              lastTs: sample.ts,
-              lastActivity: sample.activity,
-              isMoving: sample.isMoving,
-            }));
-          }
-        });
-        unsubscribers.push(() => locSub.remove?.());
-
-        const motionSub = BG.onMotionChange((event: any) => {
-          console.log("[BG-POC] motionchange", event.isMoving, event.location);
-          reissueNotification();
-        });
-        unsubscribers.push(() => motionSub.remove?.());
-
-        const activitySub = BG.onActivityChange((event: any) => {
-          console.log("[BG-POC] activitychange", event.activity, event.confidence);
-          if (!cancelled) {
-            setStats((s) => ({ ...s, lastActivity: event.activity }));
-          }
-        });
-        unsubscribers.push(() => activitySub.remove?.());
-
-        // heartbeat: 静止中も 60秒ごとに plugin が wake → 通知復活
-        // Doze mode 下でも plugin native 側で wake lock 取得済
-        const heartbeatSub = BG.onHeartbeat((event: any) => {
-          console.log("[BG-POC] heartbeat", event?.location?.timestamp);
-          reissueNotification();
-        });
-        unsubscribers.push(() => heartbeatSub.remove?.());
-
-        // ready (Council 推奨設定)
-        const state = await BG.ready({
-          desiredAccuracy: BG.DESIRED_ACCURACY_HIGH,
-          distanceFilter: 10,
-          stopTimeout: 15,
-          stationaryRadius: 25,
-          activityRecognitionInterval: 10000,
-          stopOnTerminate: false,
-          startOnBoot: true,
-          enableHeadless: true,
-          // 静止中も 60秒ごとに wake → 通知再投与のトリガー
-          heartbeatInterval: 60,
-          notification: {
-            title: "EV Manager — 移動記録 (常駐)",
-            text: "BG で位置を記録中。スワイプで消しても 60 秒以内に復活します",
-            sticky: true,
-            priority: BG.NOTIFICATION_PRIORITY_HIGH,
-            channelName: "EV Manager BG GPS",
+        watcherId = await BG.addWatcher(
+          {
+            backgroundMessage: "EV Manager — BG GPS で位置を記録中",
+            backgroundTitle: "EV Manager",
+            requestPermissions: true,
+            stale: false,
+            distanceFilter: 10,
           },
-          debug: false, // PoC 中は false (true にすると効果音うるさい)
-          logLevel: BG.LOG_LEVEL_VERBOSE,
-        });
+          (location: any, error: any) => {
+            if (error) {
+              console.error("[BG-POC] watcher error", error);
+              if (!cancelled) {
+                setStats((s) => ({ ...s, error: String(error?.message ?? error) }));
+              }
+              return;
+            }
+            if (!location) return;
 
-        if (!cancelled) setStats((s) => ({ ...s, ready: true, enabled: state.enabled }));
+            const speedMps: number | null =
+              typeof location.speed === "number" && !Number.isNaN(location.speed)
+                ? location.speed
+                : null;
+            const isMoving =
+              speedMps != null && speedMps >= MOVING_SPEED_THRESHOLD_MPS;
+            const activity = isMoving ? "MOVING" : "STILL";
 
-        if (!state.enabled) {
-          await BG.start();
-          if (!cancelled) setStats((s) => ({ ...s, enabled: true }));
+            const sample: PocLocationSample = {
+              ts: new Date(location.time ?? Date.now()).toISOString(),
+              lat: location.latitude,
+              lng: location.longitude,
+              speed: speedMps,
+              accuracy: location.accuracy ?? 0,
+              activity,
+              isMoving,
+            };
+            appendSample(sample);
+
+            if (!cancelled) {
+              const arr = JSON.parse(localStorage.getItem(POC_STORAGE_KEY) || "[]");
+              setStats((s) => ({
+                ...s,
+                ready: true,
+                enabled: true,
+                sampleCount: arr.length,
+                lastTs: sample.ts,
+                lastActivity: activity,
+                isMoving,
+              }));
+            }
+          },
+        );
+
+        if (!cancelled) {
+          setStats((s) => ({ ...s, ready: true, enabled: true }));
         }
       } catch (e) {
         console.error("[BG-POC] init error", e);
@@ -171,7 +143,17 @@ export function useBackgroundGeolocation() {
     init();
     return () => {
       cancelled = true;
-      unsubscribers.forEach((fn) => fn());
+      if (watcherId) {
+        // dynamic import 経由で plugin を取り出して removeWatcher
+        import(
+          /* @vite-ignore */ "@capacitor-community/background-geolocation"
+        ).then((mod) => {
+          const BG = (mod as any).BackgroundGeolocation ?? (mod as any).default ?? mod;
+          BG.removeWatcher({ id: watcherId }).catch((e: any) =>
+            console.warn("[BG-POC] removeWatcher failed", e),
+          );
+        });
+      }
     };
   }, []);
 
