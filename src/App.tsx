@@ -1,6 +1,7 @@
 import { useState, useEffect, lazy, Suspense, useRef } from "react";
 
 const RedesignApp = lazy(() => import("./components/redesign/App.tsx"));
+const SilentApp = lazy(() => import("./components/silent/App.tsx"));
 import { ExternalLink, HelpCircle } from "lucide-react";
 import { HelpPanel } from "./components/help/HelpPanel.tsx";
 import { BottomNav } from "./components/ui/BottomNav.tsx";
@@ -29,12 +30,40 @@ const SettingsPanel = lazy(() => import("./components/settings/SettingsPanel.tsx
 const VehicleTab = lazy(() => import("./components/vehicle/VehicleTab.tsx").then((m) => ({ default: m.VehicleTab })));
 
 export default function App() {
-  // NEXUS v2 が default。?ui=v1 で旧 UI (fallback / 緊急時の脱出口)
-  const isV1Fallback =
-    typeof window !== "undefined" &&
-    new URLSearchParams(window.location.search).get("ui") === "v1";
+  // v5.0.0 Silent Console が default (Pro Bridge L4 採択 2026-05-06)。
+  // ?ui=v2 で旧 NEXUS sci-fi、?ui=v1 で legacy 旧 UI (緊急時の脱出口)。
+  const ui =
+    typeof window !== "undefined"
+      ? new URLSearchParams(window.location.search).get("ui")
+      : null;
 
-  if (!isV1Fallback) {
+  if (ui !== "v1" && ui !== "v2") {
+    return (
+      <Suspense
+        fallback={
+          <div
+            style={{
+              padding: 40,
+              textAlign: "center",
+              color: "#F4F2EE",
+              background: "#000",
+              minHeight: "100vh",
+              fontFamily: "'Inter', sans-serif",
+              letterSpacing: "0.16em",
+              fontSize: 11,
+              textTransform: "uppercase",
+            }}
+          >
+            silent console
+          </div>
+        }
+      >
+        <SilentApp />
+      </Suspense>
+    );
+  }
+
+  if (ui === "v2") {
     return (
       <Suspense
         fallback={

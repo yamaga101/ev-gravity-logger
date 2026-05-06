@@ -4,15 +4,12 @@
     android:height="108dp"
     android:viewportWidth="108"
     android:viewportHeight="108">
-    <!-- EV monogram — Pro Bridge L4 採択 (2026-05-06):
-         bolt は主役から降ろし、E + V の輪郭で identity を作る。
-         "青い雷" archetype から "EV cockpit" archetype へ認知圧縮を変える。
-         Latin face は NEXUS v2 の Exo 2 / Orbitron 角度感と整合。 -->
+    <!-- Silent Automotive Console v5.0.0 — Pro Bridge L4 採択 (2026-05-06):
+         "なーんもかわってない" frustration への抜本的応答。
+         EV monogram (cyan stroke) を撤去 → 単一 amber dot (#E8A04A) に。
+         「文字を読ませる icon」ですらなく、究極の minimal calm dot。
+         silhouette が完全に変わる: bolt も letter も無くなり、円のみ。 -->
     <path
-        android:strokeColor="#FF22E6FF"
-        android:strokeWidth="9"
-        android:strokeLineCap="round"
-        android:strokeLineJoin="round"
-        android:fillColor="#00000000"
-        android:pathData="M22,24 V88 M22,24 H48 M22,55 H42 M22,88 H48 M54,24 L70,88 M86,24 L70,88"/>
+        android:fillColor="#FFE8A04A"
+        android:pathData="M54,30 a24,24 0 1,0 0.0001,0 Z"/>
 </vector>

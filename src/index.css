@@ -1113,3 +1113,86 @@ html, body, #root { background: #06080F; }
 .ev-swatch__chip { height: 56px; border-radius: var(--radius-sm); border: 1px solid var(--color-edge-soft); }
 .ev-type-row { padding: 16px 0; border-bottom: 1px solid var(--color-edge-faint); }
 .ev-radius-demo { height: 60px; background: rgba(140,170,220,0.06); border: 1px solid var(--color-edge-soft); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; }
+
+/* ────────────────────────────────────────────────────────────────────
+   Silent Automotive Console v5.0.0 — Pro Bridge L4 採択 (2026-05-06)
+   NEXUS v2 と並存。default は SilentApp、?ui=v2 で NEXUS、?ui=v1 で legacy。
+   tokens.css 由来の design tokens + .silent-app scope 限定。
+   ──────────────────────────────────────────────────────────────────── */
+
+.silent-app {
+  /* Colors */
+  --silent-bg: #000000;
+  --silent-text-primary: #F4F2EE;
+  --silent-text-secondary: #A8A39B;
+  --silent-text-tertiary: #5C5752;
+  --silent-text-muted: #3A3633;
+  --silent-accent: #E8A04A;
+  --silent-accent-dim: #B47A36;
+  --silent-border-04: rgba(255, 250, 240, 0.04);
+  --silent-border-06: rgba(255, 250, 240, 0.06);
+  --silent-border-08: rgba(255, 250, 240, 0.08);
+  --silent-border-12: rgba(255, 250, 240, 0.12);
+  --silent-fill-04: rgba(255, 250, 240, 0.04);
+  --silent-fill-06: rgba(255, 250, 240, 0.06);
+
+  /* Typography */
+  --silent-font-sans: "Inter", "Manrope", -apple-system, BlinkMacSystemFont, sans-serif;
+  --silent-font-jp: "Zen Kaku Gothic Antique", "Inter", sans-serif;
+
+  /* 8px scale */
+  --silent-s-1: 4px;
+  --silent-s-2: 8px;
+  --silent-s-3: 16px;
+  --silent-s-4: 24px;
+  --silent-s-5: 32px;
+  --silent-s-6: 48px;
+  --silent-s-7: 64px;
+  --silent-s-8: 96px;
+  --silent-s-9: 128px;
+
+  /* Radii */
+  --silent-r-sm: 8px;
+  --silent-r-md: 12px;
+  --silent-r-lg: 14px;
+  --silent-r-xl: 16px;
+
+  /* Motion */
+  --silent-ease: cubic-bezier(0.22, 1, 0.36, 1);
+  --silent-t-micro: 120ms;
+  --silent-t-std: 240ms;
+  --silent-t-large: 480ms;
+}
+
+.silent-app, .silent-app * {
+  box-sizing: border-box;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+.silent-app {
+  background: var(--silent-bg);
+  color: var(--silent-text-primary);
+  font-family: var(--silent-font-sans);
+  font-feature-settings: "ss01", "cv11";
+  letter-spacing: -0.01em;
+  width: 100%;
+  min-height: 100vh;
+  position: relative;
+}
+
+.silent-app .num,
+.silent-app .tnum {
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum";
+}
+
+.silent-scroll {
+  overflow-y: auto;
+  scrollbar-width: none;
+}
+.silent-scroll::-webkit-scrollbar { display: none; }
+
+/* Body 全体に .silent-app class が付くと NEXUS v2 と style 衝突する可能性
+   があるので、body.silent-app は最小限。実際の scope は子要素の
+   className="silent-app" に依存させる */

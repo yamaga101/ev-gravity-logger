@@ -1,0 +1,82 @@
+/* Silent Automotive Console — Design Tokens */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@200;300;400;500;600&family=Manrope:wght@200;300;400;500;600&family=Zen+Kaku+Gothic+Antique:wght@300;400;500;700&display=swap');
+
+:root {
+  /* ─────────── Colors ─────────── */
+  --bg: #000000;
+  --text-primary:   #F4F2EE;
+  --text-secondary: #A8A39B;
+  --text-tertiary:  #5C5752;
+  --text-muted:     #3A3633;
+
+  --accent: #E8A04A;       /* warm amber — single accent */
+  --accent-dim: #B47A36;   /* darker amber for subdued use */
+
+  /* Borders / surfaces (alpha on warm white) */
+  --border-04: rgba(255, 250, 240, 0.04);
+  --border-06: rgba(255, 250, 240, 0.06);
+  --border-08: rgba(255, 250, 240, 0.08);
+  --border-12: rgba(255, 250, 240, 0.12);
+
+  --fill-04: rgba(255, 250, 240, 0.04);
+  --fill-06: rgba(255, 250, 240, 0.06);
+
+  /* ─────────── Typography ─────────── */
+  --font-sans: 'Inter', 'Manrope', -apple-system, BlinkMacSystemFont, sans-serif;
+  --font-jp:   'Zen Kaku Gothic Antique', 'Inter', sans-serif;
+
+  /* ─────────── Spacing — 8px scale ─────────── */
+  --s-1: 4px;
+  --s-2: 8px;
+  --s-3: 16px;
+  --s-4: 24px;
+  --s-5: 32px;
+  --s-6: 48px;
+  --s-7: 64px;
+  --s-8: 96px;
+  --s-9: 128px;
+
+  /* ─────────── Radii ─────────── */
+  --r-sm: 8px;
+  --r-md: 12px;
+  --r-lg: 14px;
+  --r-xl: 16px;
+
+  /* ─────────── Motion ─────────── */
+  --ease: cubic-bezier(0.22, 1, 0.36, 1);
+  --t-micro: 120ms;
+  --t-std: 240ms;
+  --t-large: 480ms;
+}
+
+/* Reset within phone screens */
+.silent-app, .silent-app * {
+  box-sizing: border-box;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+.silent-app {
+  background: var(--bg);
+  color: var(--text-primary);
+  font-family: var(--font-sans);
+  font-feature-settings: "ss01", "cv11";
+  letter-spacing: -0.01em;
+  width: 100%;
+  height: 100%;
+  position: relative;
+  overflow: hidden;
+}
+
+/* Tabular numerics by default — design depends on it */
+.tnum, .silent-app .num {
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum";
+}
+
+/* Hide scrollbar in artboards */
+.silent-scroll {
+  overflow-y: auto;
+  scrollbar-width: none;
+}
+.silent-scroll::-webkit-scrollbar { display: none; }
