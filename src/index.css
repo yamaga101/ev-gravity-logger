@@ -61,10 +61,15 @@
   --color-dark-text: #F0F6FF;
   --color-dark-border: rgba(0, 240, 255, 0.12);
 
-  /* Typography */
-  --font-display: "Orbitron", sans-serif;
-  --font-mono: "JetBrains Mono", monospace;
-  --font-sans: "Exo 2", "Noto Sans JP", sans-serif;
+  /* Typography — Pro Bridge L4 採択 (2026-05-06):
+     - Latin: Exo 2 / Orbitron / JetBrains Mono を role 別に維持
+     - JP: BIZ UDPGothic (industrial 機能美、計器盤ラベル化)
+     - Noto Sans JP は long body / glyph fallback として残す
+     ev-manager の JP は instrument label であり、装飾的な Sci-Fi 化はしない */
+  --font-display: "Orbitron", "Exo 2", sans-serif;
+  --font-mono: "JetBrains Mono", "BIZ UDPGothic", monospace;
+  --font-sans: "Exo 2", "BIZ UDPGothic", "Noto Sans JP", sans-serif;
+  --font-jp: "BIZ UDPGothic", "Noto Sans JP", sans-serif;
 }
 
 /* === Base === */

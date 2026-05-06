@@ -4,7 +4,13 @@
     android:height="108dp"
     android:viewportWidth="108"
     android:viewportHeight="108">
+    <!-- monochrome layer (Android 13+ themed icon)。
+         themed mode で system tint されるので、formula は同一だが alpha のみ意味を持つ。 -->
     <path
-        android:pathData="M62,22 L36,58 L50,58 L46,88 L72,50 L58,50 Z"
-        android:fillColor="#FFFFFFFF"/>
+        android:strokeColor="#FFFFFFFF"
+        android:strokeWidth="9"
+        android:strokeLineCap="round"
+        android:strokeLineJoin="round"
+        android:fillColor="#00000000"
+        android:pathData="M22,24 V88 M22,24 H48 M22,55 H42 M22,88 H48 M54,24 L70,88 M86,24 L70,88"/>
 </vector>

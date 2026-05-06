@@ -1,20 +1,18 @@
 <?xml version="1.0" encoding="utf-8"?>
 <vector xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:aapt="http://schemas.android.com/aapt"
     android:width="108dp"
     android:height="108dp"
     android:viewportWidth="108"
     android:viewportHeight="108">
-    <path android:pathData="M62,22 L36,58 L50,58 L46,88 L72,50 L58,50 Z">
-        <aapt:attr name="android:fillColor">
-            <gradient
-                android:type="linear"
-                android:startX="36" android:startY="22"
-                android:endX="72" android:endY="88">
-                <item android:offset="0" android:color="#FF7BF5FF"/>
-                <item android:offset="0.5" android:color="#FF22E6FF"/>
-                <item android:offset="1" android:color="#FF00B8D4"/>
-            </gradient>
-        </aapt:attr>
-    </path>
+    <!-- EV monogram — Pro Bridge L4 採択 (2026-05-06):
+         bolt は主役から降ろし、E + V の輪郭で identity を作る。
+         "青い雷" archetype から "EV cockpit" archetype へ認知圧縮を変える。
+         Latin face は NEXUS v2 の Exo 2 / Orbitron 角度感と整合。 -->
+    <path
+        android:strokeColor="#FF22E6FF"
+        android:strokeWidth="9"
+        android:strokeLineCap="round"
+        android:strokeLineJoin="round"
+        android:fillColor="#00000000"
+        android:pathData="M22,24 V88 M22,24 H48 M22,55 H42 M22,88 H48 M54,24 L70,88 M86,24 L70,88"/>
 </vector>

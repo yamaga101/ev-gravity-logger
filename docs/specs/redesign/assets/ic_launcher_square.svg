@@ -9,13 +9,17 @@
       <stop offset="0.6" stop-color="#22E6FF" stop-opacity="0.06"/>
       <stop offset="1" stop-color="#22E6FF" stop-opacity="0"/>
     </radialGradient>
-    <linearGradient id="bolt" x1="36" y1="22" x2="72" y2="88" gradientUnits="userSpaceOnUse">
-      <stop offset="0" stop-color="#7BF5FF"/>
-      <stop offset="0.5" stop-color="#22E6FF"/>
-      <stop offset="1" stop-color="#00B8D4"/>
-    </linearGradient>
   </defs>
   <rect width="108" height="108" fill="url(#bg)"/>
   <rect width="108" height="108" fill="url(#halo)"/>
-  <path d="M62,22 L36,58 L50,58 L46,88 L72,50 L58,50 Z" fill="url(#bolt)"/>
+  <g stroke="#22E6FF" stroke-width="9" stroke-linecap="round" stroke-linejoin="round" fill="none">
+    <!-- E (left half, x=22-48, y=24-88): vertical stem + 3 horizontal bars -->
+    <path d="M22,24 V88"/>
+    <path d="M22,24 H48"/>
+    <path d="M22,55 H42"/>
+    <path d="M22,88 H48"/>
+    <!-- V (right half, x=54-86, y=24-88): two strokes meeting at apex (70,88) -->
+    <path d="M54,24 L70,88"/>
+    <path d="M86,24 L70,88"/>
+  </g>
 </svg>
