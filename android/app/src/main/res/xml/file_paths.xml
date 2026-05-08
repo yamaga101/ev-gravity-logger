@@ -2,4 +2,7 @@
 <paths xmlns:android="http://schemas.android.com/apk/res/android">
     <external-path name="my_images" path="." />
     <cache-path name="my_cache_images" path="." />
+    <!-- P3 v5.2.0: ApkInstallerPlugin が APK ファイルを FileProvider で公開するため -->
+    <cache-path name="apk_cache" path="apk/" />
+    <files-path name="apk_files" path="apk/" />
 </paths>

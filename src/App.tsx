@@ -22,6 +22,7 @@ import { useAutoImport } from "./hooks/useAutoImport.ts";
 import { useBackgroundGeolocation } from "./hooks/useBackgroundGeolocation.ts";
 import { useSyncStore } from "./store/useSyncStore.ts";
 import { getTranslations } from "./i18n/index.ts";
+import { UpdateBanner } from "./components/ui/UpdateBanner.tsx";
 import type { TabId, ChargingRecord } from "./types/index.ts";
 
 const HistoryList = lazy(() => import("./components/history/HistoryList.tsx").then((m) => ({ default: m.HistoryList })));
@@ -189,6 +190,8 @@ export default function App() {
 
   return (
     <div className="min-h-screen bg-space-void text-text-bright relative">
+      {/* Auto-update banner */}
+      <UpdateBanner variant="legacy" />
       {/* Deep Space Background Layers */}
       <Starfield />
       <div className="nexus-grid-bg" aria-hidden="true" />

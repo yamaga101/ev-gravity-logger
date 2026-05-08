@@ -23,6 +23,9 @@ import com.getcapacitor.BridgeActivity;
 public class MainActivity extends BridgeActivity {
     @Override
     public void onCreate(Bundle savedInstanceState) {
+        // 自作 plugin を Capacitor bridge に登録 (super.onCreate より前に呼ぶ)
+        registerPlugin(ApkInstallerPlugin.class);
+
         super.onCreate(savedInstanceState);
 
         View root = getWindow().getDecorView();

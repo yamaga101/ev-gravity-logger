@@ -7,6 +7,7 @@ import { useBackgroundGeolocation } from "../../hooks/useBackgroundGeolocation";
 import { useChargingStore } from "../../store/useChargingStore";
 import { APP_VERSION } from "../../constants/defaults.ts";
 import { NavContext } from "./primitives";
+import { UpdateBanner } from "../ui/UpdateBanner";
 import {
   ChargingStartScreen,
   ChargingLiveScreen,
@@ -92,6 +93,7 @@ export default function RedesignApp() {
 
   return (
     <NavContext.Provider value={navigate}>
+      <UpdateBanner variant="nexus" />
       <Screen />
       <BgPocBadge stats={bgStats} />
       <VersionTag />
