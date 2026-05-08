@@ -45,6 +45,19 @@ if [[ ! -f "$APK" ]]; then
   exit 1
 fi
 
+# v5.2.0/v5.2.1 で base path mismatch (`/ev-manager/`) で APK が白画面になった
+# 障害を踏まえた pre-flight check。assets/public/index.html が `./assets/` 相対
+# パスを使っているか確認、絶対 `/ev-manager/` が残っていたら abort。
+WEB_INDEX="android/app/src/main/assets/public/index.html"
+if [[ -f "$WEB_INDEX" ]]; then
+  if grep -q '"/ev-manager/assets/' "$WEB_INDEX"; then
+    echo "[error] APK assets path に /ev-manager/ 絶対パスが混入しています" >&2
+    echo "  Capacitor WebView は file:// 経由で load するため、/ev-manager/ では 404 で白画面になります" >&2
+    echo "  fix: 'npm run cap:sync' を再実行 (build:native が --base=./ で再ビルド)" >&2
+    exit 1
+  fi
+fi
+
 VERSION=$(node -p "require('./package.json').version")
 TAG="v${VERSION}"
 NAME="EV Manager v${VERSION} (Android debug)"
