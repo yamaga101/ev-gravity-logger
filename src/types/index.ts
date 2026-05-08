@@ -23,4 +23,6 @@ export type {
   ConfidenceLevel,
   SyncStatus,
   SyncEnvelope,
+  AutoTripStatus,
+  AutoTripRecord,
 } from "../../shared/types/index.ts";

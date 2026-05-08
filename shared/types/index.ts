@@ -271,7 +271,29 @@ export type Theme = "light" | "dark" | "system";
 export type Language = "en" | "ja";
 export type TabId = "charging" | "history" | "vehicle" | "stats" | "settings";
 export type VehicleSubTab = "info" | "insurance" | "tax" | "maintenance" | "inspection";
-export type HistorySubTab = "charging" | "driveLog";
+export type HistorySubTab = "charging" | "driveLog" | "autoTrip";
+
+// P2 Auto Trip — 自動移動ログ (BG GPS samples → segmented trips)
+// 設計: docs/specs/p2-auto-trip-design.md
+export type AutoTripStatus = "pending" | "confirmed" | "ignored";
+
+export interface AutoTripRecord {
+  id: string;
+  startTs: string;
+  endTs: string;
+  startLat: number;
+  startLng: number;
+  endLat: number;
+  endLng: number;
+  distanceM: number;
+  durationS: number;
+  sampleCount: number;
+  avgSpeedMps: number | null;
+  maxSpeedMps: number | null;
+  status: AutoTripStatus;
+  driveLogId: string | null;
+  confirmedAt: string | null;
+}
 
 export interface ChargeSpeedBadge {
   emoji: string;

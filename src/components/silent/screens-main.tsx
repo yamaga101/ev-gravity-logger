@@ -11,6 +11,7 @@ import {
 import { useChargingStore } from "../../store/useChargingStore";
 import { useSettingsStore } from "../../store/useSettingsStore";
 import { useBackgroundGeolocation } from "../../hooks/useBackgroundGeolocation";
+import { AutoTripSection } from "./screens-auto-trip";
 
 // 「いま充電すべきか?」の核を 1 秒で答える hero。real data を反映。
 function fmtKm(km: number): string { return km.toFixed(0); }
@@ -478,6 +479,7 @@ function ChargeDoneScreen() {
 // ─────────────────────────────────────────────────────────────
 function HistoryScreen() {
   const history = useChargingStore((s) => s.history);
+  const [tab, setTab] = useState<"sessions" | "drives">("sessions");
 
   // 月別グルーピング
   const grouped = useMemo(() => {
@@ -542,22 +544,63 @@ function HistoryScreen() {
     <AppShell nav navActive="history">
       <div style={{ padding: '24px 24px 0' }}>
         <StatusLabel>History</StatusLabel>
-        <div style={{ height: 32 }} />
-        <HeroNumber value={String(history.length)} unit="sessions" size={56} unitSize={13} weight={200} />
-        <div style={{ height: 8 }} />
-        <div className="num" style={{ fontSize: 12, color: '#5C5752' }}>{history.length === 0 ? "まだ充電ログがありません" : `total · ¥${totalCost.toLocaleString()}`}</div>
+        <div style={{ height: 16 }} />
+
+        {/* sub-tab toggle: Sessions / Drives */}
+        <div style={{ display: 'flex', gap: 16, marginBottom: 16 }}>
+          {[
+            { id: 'sessions', label: 'Sessions' },
+            { id: 'drives', label: 'Drives' },
+          ].map((opt) => {
+            const isActive = tab === opt.id;
+            return (
+              <button
+                key={opt.id}
+                onClick={() => setTab(opt.id as 'sessions' | 'drives')}
+                style={{
+                  background: 'transparent',
+                  border: 'none',
+                  padding: '6px 0',
+                  color: isActive ? '#E8A04A' : '#5C5752',
+                  fontSize: 11,
+                  letterSpacing: '0.16em',
+                  textTransform: 'uppercase',
+                  borderBottom: isActive ? '1px solid #E8A04A' : '1px solid transparent',
+                  cursor: 'pointer',
+                }}
+              >
+                {opt.label}
+              </button>
+            );
+          })}
+        </div>
+
+        {tab === 'sessions' && (
+          <>
+            <HeroNumber value={String(history.length)} unit="sessions" size={56} unitSize={13} weight={200} />
+            <div style={{ height: 8 }} />
+            <div className="num" style={{ fontSize: 12, color: '#5C5752' }}>{history.length === 0 ? "まだ充電ログがありません" : `total · ¥${totalCost.toLocaleString()}`}</div>
+          </>
+        )}
       </div>
-      <div style={{ height: 24 }} />
-      {grouped.map((g, i) => (
-        <Section
-          key={i}
-          month={g.month}
-          year={g.year}
-          total={`¥${g.total.toLocaleString()}`}
-          count={`${g.items.length} session${g.items.length > 1 ? 's' : ''}`}
-          items={g.items}
-        />
-      ))}
+
+      {tab === 'sessions' && (
+        <>
+          <div style={{ height: 24 }} />
+          {grouped.map((g, i) => (
+            <Section
+              key={i}
+              month={g.month}
+              year={g.year}
+              total={`¥${g.total.toLocaleString()}`}
+              count={`${g.items.length} session${g.items.length > 1 ? 's' : ''}`}
+              items={g.items}
+            />
+          ))}
+        </>
+      )}
+
+      {tab === 'drives' && <AutoTripSection />}
     </AppShell>
   );
 }
