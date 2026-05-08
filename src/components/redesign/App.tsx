@@ -8,6 +8,7 @@ import { useChargingStore } from "../../store/useChargingStore";
 import { APP_VERSION } from "../../constants/defaults.ts";
 import { NavContext } from "./primitives";
 import { UpdateBanner } from "../ui/UpdateBanner";
+import { ErrorBoundary } from "../ui/ErrorBoundary";
 import {
   ChargingStartScreen,
   ChargingLiveScreen,
@@ -93,7 +94,9 @@ export default function RedesignApp() {
 
   return (
     <NavContext.Provider value={navigate}>
-      <UpdateBanner variant="nexus" />
+      <ErrorBoundary fallback={null}>
+        <UpdateBanner variant="nexus" />
+      </ErrorBoundary>
       <Screen />
       <BgPocBadge stats={bgStats} />
       <VersionTag />

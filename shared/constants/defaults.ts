@@ -1,6 +1,6 @@
 import { ENV_GAS_SHARED_TOKEN, ENV_GEMINI_API_KEY } from "./env";
 
-export const APP_VERSION = "5.2.0";
+export const APP_VERSION = "5.2.1";
 export const PRE_CONFIGURED_GAS_URL = "https://script.google.com/macros/s/AKfycbzvSN49XRzYNB0N6QUiIiBdkpvIaeMhHC1xPJHnEoA2rT4ytz4BwRHAjwcbD8_uT1uJ/exec";
 export const DEFAULT_GAS_SHARED_TOKEN = ENV_GAS_SHARED_TOKEN;
 export const DEFAULT_GEMINI_API_KEY = ENV_GEMINI_API_KEY;

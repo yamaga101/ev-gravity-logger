@@ -3,19 +3,21 @@
 //
 // 設計: docs/specs/p3-auto-update.md
 //
-// 3 UI variant (Silent / NEXUS v2 / legacy) で見た目を切替。`variant` prop で指定。
-// 共通 fallback (variant 未指定) は Silent 風 (warm amber + dark) — Silent が default。
+// v5.2.1: auto-update.ts は dynamic import で遅延読込み。
+//   理由: @capacitor/filesystem の top-level import が native plugin 不在環境で
+//   throw すると React tree が mount 前に死ぬ (v5.2.0 white screen 障害)。
+//   全外部依存を mount 後の async block に閉じ込めて防御する。
 
 import { useEffect, useState, useRef } from "react";
-import {
-  checkForUpdate,
-  downloadAndInstall,
-  dismissUpdate,
-  type UpdateInfo,
-} from "../../services/auto-update";
 
 type Variant = "silent" | "nexus" | "legacy";
 type Phase = "idle" | "available" | "downloading" | "error" | "done";
+
+interface UpdateInfoLite {
+  available: boolean;
+  latestVersion?: string;
+  downloadUrl?: string;
+}
 
 interface Props {
   variant?: Variant;
@@ -23,20 +25,25 @@ interface Props {
 
 export function UpdateBanner({ variant = "silent" }: Props) {
   const [phase, setPhase] = useState<Phase>("idle");
-  const [info, setInfo] = useState<UpdateInfo | null>(null);
+  const [info, setInfo] = useState<UpdateInfoLite | null>(null);
   const [progress, setProgress] = useState(0);
   const [error, setError] = useState<string | null>(null);
   const checkedRef = useRef(false);
 
-  // 起動時 1 回 check
+  // 起動時 1 回 check (lazy load → 失敗しても app mount は無事)
   useEffect(() => {
     if (checkedRef.current) return;
     checkedRef.current = true;
     void (async () => {
       try {
-        const r = await checkForUpdate(false);
-        if (r.available) {
-          setInfo(r);
+        const mod = await import("../../services/auto-update");
+        const r = await mod.checkForUpdate(false);
+        if (r.available && r.latestVersion && r.downloadUrl) {
+          setInfo({
+            available: true,
+            latestVersion: r.latestVersion,
+            downloadUrl: r.downloadUrl,
+          });
           setPhase("available");
         }
       } catch (e) {
@@ -51,7 +58,8 @@ export function UpdateBanner({ variant = "silent" }: Props) {
     setProgress(0);
     setError(null);
     try {
-      await downloadAndInstall(info.downloadUrl, (pct) => setProgress(pct));
+      const mod = await import("../../services/auto-update");
+      await mod.downloadAndInstall(info.downloadUrl, (pct) => setProgress(pct));
       setPhase("done");
     } catch (e: any) {
       console.error("[UpdateBanner] install failed", e);
@@ -60,9 +68,14 @@ export function UpdateBanner({ variant = "silent" }: Props) {
     }
   };
 
-  const handleDismiss = () => {
+  const handleDismiss = async () => {
     if (info?.latestVersion) {
-      dismissUpdate(info.latestVersion);
+      try {
+        const mod = await import("../../services/auto-update");
+        mod.dismissUpdate(info.latestVersion);
+      } catch {
+        // ignore
+      }
     }
     setPhase("idle");
     setInfo(null);

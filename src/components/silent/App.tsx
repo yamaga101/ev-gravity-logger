@@ -11,6 +11,7 @@ import { useChargingStore } from "../../store/useChargingStore";
 import { APP_VERSION } from "../../constants/defaults";
 import { NavContext } from "./primitives";
 import { UpdateBanner } from "../ui/UpdateBanner";
+import { ErrorBoundary } from "../ui/ErrorBoundary";
 import {
   TodayScreen,
   ChargeStartScreen,
@@ -97,7 +98,9 @@ export default function SilentApp() {
   return (
     <NavContext.Provider value={navigate}>
       <div className="silent-app" style={{ minHeight: "100vh", background: "#000", color: "#F4F2EE" }}>
-        <UpdateBanner variant="silent" />
+        <ErrorBoundary fallback={null}>
+          <UpdateBanner variant="silent" />
+        </ErrorBoundary>
         <Screen />
       </div>
     </NavContext.Provider>

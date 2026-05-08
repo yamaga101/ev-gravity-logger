@@ -191,7 +191,9 @@ export default function App() {
   return (
     <div className="min-h-screen bg-space-void text-text-bright relative">
       {/* Auto-update banner */}
-      <UpdateBanner variant="legacy" />
+      <ErrorBoundary fallback={null}>
+        <UpdateBanner variant="legacy" />
+      </ErrorBoundary>
       {/* Deep Space Background Layers */}
       <Starfield />
       <div className="nexus-grid-bg" aria-hidden="true" />
